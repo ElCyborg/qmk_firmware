@@ -116,25 +116,25 @@ static uint8_t connect_buff = 0;
 bool ble_flag = 0;
 static uint32_t ble_bat_timer;
 uint8_t Light_Count;
-static uint32_t long_ble_24g_timer          = 0;    //蓝牙2.4g长按计时
-static uint32_t blink_ble_24g_timer         = 0;    //蓝牙2.4闪烁计时
-uint32_t keyborad_Idtimer         = 0;    //按键空闲计时
-uint32_t keyborad_Chrgtimer         = 0;    //充电计时
-uint32_t encoder_longpresstimer         = 0;    //充电计时
-uint32_t test_twoled         = 0;    //按键空闲计时
-static uint32_t pair_timeout                = 20000;//20000;    //配对超时时间
-static uint32_t pair_succeed_timer          = 0;    //按键无线配对成功灯长亮时间
-static uint32_t long_press_reset_timer      = 0;    //记录长按复位键的时
-static uint8_t release_count = 0;           //usb休眠唤醒添加释放包，防止hold键
+static uint32_t long_ble_24g_timer          = 0;    //bluetooth24gLongPressTiming
+static uint32_t blink_ble_24g_timer         = 0;    //bluetooth24FlashTiming
+uint32_t keyborad_Idtimer         = 0;    //keyIdleTimer
+uint32_t keyborad_Chrgtimer         = 0;    //chargingTiming
+uint32_t encoder_longpresstimer         = 0;    //chargingTiming
+uint32_t test_twoled         = 0;    //keyIdleTimer
+static uint32_t pair_timeout                = 20000;//20000;    //pairingTimeout
+static uint32_t pair_succeed_timer          = 0;    //The button wireless pairing success light stays on for a long time
+static uint32_t long_press_reset_timer      = 0;    //recordWhenTheResetButtonIsPressedAndHeld
+static uint8_t release_count = 0;           //USB sleep wake-up adds release package to prevent hold key
 static uint32_t usb_suspend_time;   
 // static uint8_t WinLayer_Flag;  
 // static uint8_t MacLayer_Flag;  
 static uint32_t usb_suspend_time;  
 uint8_t test_count  = 0;
-/****************标志变量************************/
+/****************flagVariable************************/
 kb_flag32_t	flag32 = {0}; 
-uint8_t usb_suspend_flag = 2;             //usb检测到suspend标志位
-//adc检测变量
+uint8_t usb_suspend_flag = 2;             //usbDetectsSuspendFlag
+//adcDetectionVariable
 static uint16_t adc_value = 0;
 static uint16_t adc_vref = 0;
 uint16_t battery_value = 0;//20240317
@@ -143,7 +143,7 @@ static  uint32_t battery_test_time;
 extern bool suspend;
 extern bool wireless_connected;
 extern uint8_t last_wireless_mode;
- enum kb_mode_t kb_mode= KB_MODE_DEFALT;//每次上电都可以进入下面的上电执行一次的地
+ enum kb_mode_t kb_mode= KB_MODE_DEFALT;//Every time you power on, you can enter the following power-on execution location.
 extern rgb_led_t leds[6];
 #define LOOP_10HZ_PERIOD    100
 deferred_token loop10hz_token  = INVALID_DEFERRED_TOKEN;
@@ -228,9 +228,9 @@ const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
 
 #endif
 
-/*全键无冲切换*/
+/*fullKeyRolloverSwitching*/
 void key_nkro_toggle(void) {
-    //全键无冲带记忆
+    //fullKeyRolloverWithMemory
     if (nkro_flag != keymap_config.nkro) {
         nkro_flag = keymap_config.nkro;
         // dynamic_keymap_set_keycode(1, 1, 0, nkro_flag);
@@ -239,7 +239,7 @@ void key_nkro_toggle(void) {
     }
 }
 
-//插入检测  
+//insertionDetection
 bool get_plug_mode(void) 
 {
     if (readPin(PLUG_IN))
@@ -252,7 +252,7 @@ bool get_plug_mode(void)
     }
 }
 
-//增加限制
+//increaseLimit
 uint8_t count_ble;
 uint8_t count_24G;
 uint8_t count_USB;
@@ -294,7 +294,7 @@ void get_mode(void)
 #ifdef  mk637_special_isr
 void special_key_debounce(void)
 {
-   //中断源1 左旋    2 2.4G  3蓝牙
+   //Interrupt source 1 Left-hand rotation 2 2.4G 3 Bluetooth
    uint8_t temp_status;     
 
    if(isr_specal_Trig)
@@ -315,7 +315,7 @@ void special_key_debounce(void)
         wait_ms(5); 
         if( (isr_specal_Trig == 1 && (temp_status !=  readPin(encoder_left)))  ||  (isr_specal_Trig == 2 && (temp_status !=  readPin(TwoMode)))  || (isr_specal_Trig == 3 && (temp_status !=  readPin(BLE)))  )
         {   
-            //中断源再加进去
+            //addInterruptSource
 
             setPinInput(BLE);
             setPinInput(TwoMode);
@@ -384,7 +384,7 @@ void keyboard_pre_init_kb(void) {
 }
 
 
-// //键盘初始化
+// //keyboardInitialization
 void keyboard_post_init_kb(void)
 {
     uart_init(460800);
@@ -398,7 +398,7 @@ void keyboard_post_init_kb(void)
     // writePinHigh(ARGB_LEFT_EN);
     AFIO->MAPR = (AFIO->MAPR & ~AFIO_MAPR_SWJ_CFG_Msk);
     AFIO->MAPR|= AFIO_MAPR_SWJ_CFG_DISABLE;
-// //全键无冲带记忆
+// //fullKeyRolloverWithMemory
     // nkro_flag       = dynamic_keymap_get_keycode(1, 1, 0);
     // keymap_config.nkro = nkro_flag;
      eeconfig_read_kb_datablock(&variable_data);    //读出数据  
@@ -408,7 +408,7 @@ void keyboard_post_init_kb(void)
     last_wireless_mode  = variable_data.eeconfig_last_wireless_mode;
     eeconfig_update_keymap(keymap_config.raw);
 
-    // //虚拟按键
+    // //virtualKeys
     // encode_toggle = dynamic_keymap_get_keycode(0, 4, 9);
     setPinInput(PLUG_IN);
     wait_ms(1); 
@@ -417,8 +417,8 @@ void keyboard_post_init_kb(void)
     // lock_win_flag  = dynamic_keymap_get_keycode(1, 2, 0);
     flag32.mode_one = 1;
     pair_succeed_timer = timer_read32();
-//ADC初始化
-    adc_init();     //adc初始化
+//adcInitialization
+    adc_init();     //adcInitialization
     get_adc_value();
     get_adc_vref();
     Rtc_Config_Api();
@@ -427,7 +427,7 @@ void keyboard_post_init_kb(void)
 
 
 uint8_t limit_flag;
-//1s执行10次 
+//execute10TimesIn1s 
 enum kb_mode_t new_kb_mode = KB_MODE_DEFALT;
 uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
 {
@@ -507,10 +507,10 @@ uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
         if(timer_elapsed32(encode_toggle_timer) > 2000)
         {
             encode_toggle  = !encode_toggle;
-            //存储功能
-            // dynamic_keymap_set_keycode(0, 4, 9, encode_toggle);//虚拟按键
+            //storageFunction
+            // dynamic_keymap_set_keycode(0, 4, 9, encode_toggle);//virtualKeys
             variable_data.eeconfig_encode_toggle = encode_toggle;
-            //增加常亮1s白色计时
+            //Add a 1-second white countdown with constant illumination
             if(!BT_24G_Shine)
             {
                 encode_toggle_flag = 1;
@@ -544,7 +544,7 @@ uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
 
 
 
-   //恢复原来的灯效
+   //Restore the original lighting effects
       
 //    if( rgblight_get_mode() != (RGBLIGHT_MODE_SNAKE))
 //    {
@@ -591,14 +591,14 @@ uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
         battery_test_time = timer_read32();
         temp = batt_level();
         last_temp = temp;
-        bat_test_flag = true;              //把bat_test_flag置1，确保只进一次
+        bat_test_flag = true;              //Set bat_test_flag to 1 to ensure it is entered only once.
     }
 
-    adc_test();         //adc检测
-    ble_send_batt();    //蓝牙发送百分比电量
+    adc_test();         //adc detection
+    ble_send_batt();    //Bluetooth sends percentage battery level
 
 
-//防止按键按下时间过长
+//prevent prolonged button presses
     if(timer_elapsed32(First_timer) > 400)
     {
        FN_Count = 0;
@@ -627,7 +627,7 @@ uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
         }
     }
 
-   //检测电池发送，空闲才发送
+   //Detect battery status before sending; send only when idle.
     if((battery_Flag == 1) && (!keyboard_Idle) )
     {
         battery_Flag = 0;
@@ -636,11 +636,11 @@ uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
 
 //question
       get_mode();
-//    上电进来一次默认为usb
+//   Upon power-up, the default input is USB.
     if (kb_mode != new_kb_mode)  //ONLY DO IT ONCE WHEN MODE SWITCHED
     {
          new_kb_mode = kb_mode;  
-         BT_24G_Shine = 0;   //，模式切换进来一次，BT_24G_Shine = 0；
+         BT_24G_Shine = 0;   //，mode switch activated once，BT_24G_Shine = 0；
         if(kb_mode==KB_MODE_BLE)
         {
             last_wireless_mode &= 3;

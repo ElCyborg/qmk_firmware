@@ -467,7 +467,7 @@ void Module_UpdataHandle(void)
 }
  #endif
 
-static uint8_t ap2_ble_leds(void) {  //返回的就是灯的状态
+static uint8_t ap2_ble_leds(void) {  //The returned value is the lamp's status
 static enum {UART_READY, UART_0X55_RECEIVED, UART_LENS_REVEIVED,UART_WORKMODE, UART_REPORT_ID_RECEIVED} uart_state = UART_READY;
 static uint8_t 	uart_command[40];
 static uint8_t uart_lens =0;
@@ -537,7 +537,7 @@ uint8_t c;
                         case 0:
          
 
-                            //获取的模式与当前的模式一致,2.4G和蓝牙分两种       
+                            //The acquired mode matches the current mode. There are two types: 2.4 GHz and Bluetooth. The 2.4GHz and Bluetooth modes are distinct.
                             if(last_wireless_mode <= 3)
                             {
                                  if(last_wireless_mode ==  uart_workmode)
@@ -650,7 +650,7 @@ static void ap2_ble_mouse(report_mouse_t *report) {
           }
           keyboard_test_time = timer_read32();
 
-          //防止宏录制异常，更新心跳包计数以及一二级时间
+          //Prevent macro recording anomalies, update heartbeat packet count, and primary/secondary timestamps.
          rgb_wireless_timer  = timer_read32();
          first_sleep_timer   = timer_read32(); 
          packet_send = 0;
@@ -679,7 +679,7 @@ static void ap2_ble_extra(report_extra_t *report) {
           {
              time_test1 =  8-(timer_elapsed32(keyboard_test_time));
 
-             //蓝牙下才延时
+             //Delay occurs only when Bluetooth is enabled.
                if(kb_mode != KB_MODE_24G)
                wait_ms(time_test1);
                  else{
@@ -698,7 +698,7 @@ static void ap2_ble_extra(report_extra_t *report) {
           }
           keyboard_test_time = timer_read32();
 
-          //防止宏录制异常，更新心跳包计数以及一二级时间
+          //Prevent macro recording anomalies, update heartbeat packet count, and primary/secondary timestamps.
          rgb_wireless_timer  = timer_read32();
          first_sleep_timer   = timer_read32(); 
          packet_send = 0;
@@ -739,7 +739,7 @@ static void ap2_ble_keyboard(report_keyboard_t *report) {
             uart_transmit((uint8_t *)report,KEYBOARD_REPORT_SIZE);
         }
 
-//防止宏录制异常，更新心跳包计数以及一二级时间
+        //Prevent macro recording anomalies, update heartbeat packet count, and primary/secondary timestamps.
          rgb_wireless_timer  = timer_read32();
          first_sleep_timer   = timer_read32(); 
          packet_send = 0;
