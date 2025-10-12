@@ -547,6 +547,18 @@ uint8_t chrgfull_falg = 1;
 uint8_t chrg_battest  = 1;
 uint8_t lowpower_effect;
 
+//void rgb_matrix_set_color_key_using_hsv(uint8_t keynum, uint8_t red, uint8_t green, uint8_t blue) {
+//    HSV hsv = rgb_to_hsv(red, green, blue);
+//    if (hsv.v > rgb_matrix_get_val()) {
+//        hsv.v = rgb_matrix_get_val();
+//    }
+//    
+//    RGB rgb = hsv_to_rgb(hsv);
+//    
+//    rgb_matrix_set_color(keynum, rgb.r, rgb.g, rgb.b);
+//    
+//};
+
 bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
     if (sleep_switch_driverflag) {
         rgb_matrix_set_color_all(0, 0, 0);
@@ -624,7 +636,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
         }
 
         // Battery Level Indicator
-        if (!get_plug_mode() && Light_Count && ((kb_mode == KB_MODE_BLE) || (kb_mode == KB_MODE_24G))) //
+        if ( Light_Count) //
         {
             rgb_matrix_set_color_all(0, 0, 0);
             for (uint8_t i = 0; i < Light_Count; i++) {
@@ -948,9 +960,9 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
     if (!lock_keyboard) {
         if (encode_toggle == 1) { /* First encoder */
             if (clockwise) {
-                rgb_matrix_decrease_val();
+                rgb_matrix_decrease_val_noeeprom();
             } else {
-                rgb_matrix_increase_val();
+                rgb_matrix_increase_val_noeeprom();
             }
         } else if (encode_toggle == 0) { /* Second encoder */
             if (clockwise) {
