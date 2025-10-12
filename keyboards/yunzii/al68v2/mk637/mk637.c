@@ -25,7 +25,7 @@
 #include "mk637.h"
 #include "os_detection.h"
 #include "raw_hid.h"
-#include "process_rgb.h"
+#include "process_rgb_matrix.h"
 #include "action_util.h"
 #include "common.h"
 #include "rtc.h"
