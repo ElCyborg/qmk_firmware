@@ -1,4 +1,4 @@
-/* Copyright 2022 Harrison Chan (Xelus)
+/* Copyright 2017 Fred Sundvik
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,4 +16,4 @@
 
 #pragma once
 
-#define STM32_HSECLK 16000000
+#include "test_common.h"
