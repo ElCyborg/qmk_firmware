@@ -299,6 +299,7 @@ void keyboard_post_init_kb(void) {
     pair_succeed_timer = timer_read32();
     // adcInitialization
     adc_init(); // adcInitialization
+    ws2812_init();
     get_adc_value();
     get_adc_vref();
     Rtc_Config_Api();
