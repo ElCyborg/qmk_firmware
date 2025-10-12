@@ -26,6 +26,11 @@
         "os_detection":true,
         "encoder": true
     },
+    "host": {
+        "default": {
+            "nkro": true
+        }
+    },
 
     "rgblight": {
         "led_count": 2,

@@ -64,7 +64,6 @@
 
 /*Force NKRO*/
 
- #define FORCE_NKRO // Force NKRO on by default
 
 /*DEBOUNCE TIME ms, default 5*/
 #define DEBOUNCE 6
