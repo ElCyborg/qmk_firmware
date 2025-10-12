@@ -166,7 +166,7 @@ const rgblight_segment_t PROGMEM __power1_layer_layer[] = RGBLIGHT_LAYER_SEGMENT
 );
 
 
-
+// BT Connections, Q/1, W/2, E/3
 const rgblight_segment_t PROGMEM __power4_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
     {0, 2, HSV_BLUE}
 );
@@ -180,7 +180,7 @@ const rgblight_segment_t PROGMEM __power5_layer_layer[] = RGBLIGHT_LAYER_SEGMENT
     {0, 2, HSV_BLACK}
 );
 
-
+// Wifi Connetions, R/1
 const rgblight_segment_t PROGMEM __power6_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
     {0, 2, HSV_GREEN}
 );
@@ -389,8 +389,8 @@ void keyboard_post_init_kb(void)
 {
     uart_init(460800);
     wait_ms(400);
-    // debug_enable=true;
-    // debug_keyboard=true;
+     debug_enable=true;
+     debug_keyboard=true;
     // debug_matrix=true;
     // debug_mouse=true;
     rgblight_layers = my_rgb_layers;
@@ -792,14 +792,6 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
 
 
 
-
-
-
-
-
-
-
-
    if(sleep_switch_driverflag) 
    {
         rgb_matrix_set_color_all(0,0,0);
@@ -859,7 +851,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
                 rgb_matrix_set_color(34,255,255,255);
             }
 
-            //旋钮的优先级低于模式
+            //Knob has lower priority than the mode
             if(!BT_24G_Shine)
             {
                 if(encode_toggle_flag)
@@ -875,7 +867,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
                   }
                 }
             }
-            else //防止闪灯期间切回模式等效
+            else //Prevent mode switching during flash duration (???)
             {
                          encode_toggle_flag = 0;
                          rgblight_set_layer_state(12,false);
@@ -887,7 +879,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
 
 
                 
-            //亮度和速度灯效
+            //Brightness and Speed Lighting Effects
         // if(!BT_24G_Shine)
             {
                 if (blink_num != 0) {  
@@ -932,7 +924,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
             }
 
 
-            //电量指示
+            //Battery Level Indicator
             if(!get_plug_mode() &&  Light_Count && ((kb_mode == KB_MODE_BLE) || (kb_mode == KB_MODE_24G))  )   //
             {      
                 rgb_matrix_set_color_all(0,0,0); 
@@ -1102,7 +1094,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
         if(1 == flag32.mode_one)
         {
             if (blink_num == 0) {
-            three_mode();
+                three_mode();
             }
         }
     }
@@ -2110,14 +2102,14 @@ uint16_t testime_flag;
 void sleep_mode(void)
 {
 
-    //软关机休眠
+    //soft shutdown sleep
       if((false == get_plug_mode() ) && (temp == 0 ))
       {
 
             POWER_EnterSleep(); 
             BT_24G_Shine = 0;   
       }
-   //回连超时休眠
+   //connection timed out, entering sleep mode
     if (!wireless_connected  &&((kb_mode == KB_MODE_BLE ) || (kb_mode == KB_MODE_24G) ) ) 
     {
 
@@ -2138,7 +2130,7 @@ void sleep_mode(void)
 
     if (wireless_connected)   //DO IT WHEN WIRELESS MODE
     {
-//测试如果改成10分钟  600s   580s   
+        //If the test is changed to 10 minutes 600s   580s   
         if(timer_elapsed32(first_sleep_timer) >= 8000  && (packet_send < 15) ) 
         {
 
@@ -2151,19 +2143,19 @@ void sleep_mode(void)
 
         }
 
-//        if(timer_elapsed32(rgb_wireless_timer) > RGB_MATRIX_WIRELESS_TIME)
-//        {
-//         
-//            config_time_alarm();
-//            POWER_EnterSleep_First();
-//            BT_24G_Shine = 0;  
-//            exti_stop_config();
-//            //如果唤醒源不是按键唤醒，才进去下面
+        if(timer_elapsed32(rgb_wireless_timer) > RGB_MATRIX_WIRELESS_TIME)
+        {
+
+            config_time_alarm();
+            POWER_EnterSleep_First();
+            BT_24G_Shine = 0;  
+            exti_stop_config();
+//            //If the wake source is not a button press, proceed to the following section.
 //            if(exti_flag)
 //            {
 //                exti_flag = 0;
-//               POWER_EnterSleep();
-//               BT_24G_Shine = 0;  
+               POWER_EnterSleep();
+               BT_24G_Shine = 0;  
 //            }
 //            else
 //            {
@@ -2171,7 +2163,7 @@ void sleep_mode(void)
 //              gpio_init();
 //              sleep_first_flag = 1;
 //            } 
-//        }  
+        }  
     }
 
 
