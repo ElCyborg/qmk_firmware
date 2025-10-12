@@ -84,7 +84,9 @@ enum custom_keycodes {
   KC_VAL_DN,
   KC_SPD_UP,
   KC_SPD_DN,
-  KC_LOCK
+  KC_LOCK,
+  KC_L_ENC,
+  KC_R_ENC  
 
 
 };
