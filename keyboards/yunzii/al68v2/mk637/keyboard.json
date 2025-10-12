@@ -3,7 +3,7 @@
     "usb": {
         "pid": "0x304E",
         "device_version": "1.1.0",
-        "wait_for": false,
+        "wait_for_enumeration": false,
         "no_startup_check": true                                     
     },
     "diode_direction": "ROW2COL",
@@ -23,7 +23,8 @@
         "nkro": true,
         "rgblight": true,
         "rgb_matrix":true,
-        "os_detection":true
+        "os_detection":true,
+        "encoder": true
     },
 
     "rgblight": {
