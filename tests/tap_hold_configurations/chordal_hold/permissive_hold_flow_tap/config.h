@@ -1,4 +1,5 @@
-/* Copyright 2022 Boardsource
+/* Copyright 2022 Vladislav Kucheriavykh
+ * Copyright 2024-2025 Google LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,27 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include QMK_KEYBOARD_H
+#pragma once
 
-enum layers {
-    _MAIN,
-    _RAISE
-};
-
-#define LOWER   MO(_LOWER)
-#define RAISE   MO(_RAISE)
-
-const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-  [_MAIN] = LAYOUT(
-     KC_7,  KC_8,  KC_9,
-     KC_4,  KC_5,  KC_6,
-     KC_1,  KC_2,  KC_3,
-     KC_0,  KC_PENT,RAISE
-  ),
-  [_RAISE] = LAYOUT(
-     KC_7,  KC_8,  RM_TOGG,
-     KC_4,  KC_5,  RM_NEXT,
-     KC_1,  KC_2,  KC_3,
-     KC_0,  KC_PENT,_______
-  )
-};
+#include "test_common.h"
+#define CHORDAL_HOLD
+#define PERMISSIVE_HOLD
+#define FLOW_TAP_TERM 150
