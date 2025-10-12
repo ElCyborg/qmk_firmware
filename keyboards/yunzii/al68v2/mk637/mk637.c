@@ -33,9 +33,9 @@
 #ifdef RGB_MATRIX_ENABLE
 #    include "rgb_matrix.h"
 #endif
-#ifdef RGBLIGHT_ENABLE
-#    include "rgblight.h"
-#endif
+//#ifdef RGBLIGHT_ENABLE
+//#    include "rgblight.h"
+//#endif
 
 // // /************************默认图层定义************************/
 
@@ -153,80 +153,80 @@ uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg);
 
 
 
-#ifdef RGBLIGHT_ENABLE
-const rgblight_segment_t PROGMEM _SecondOff_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_WHITE}
-);
-const rgblight_segment_t PROGMEM __SecondOn_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLACK}
-);
+//#ifdef RGBLIGHT_ENABLE
+//const rgblight_segment_t PROGMEM _SecondOff_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_WHITE}
+//);
+//const rgblight_segment_t PROGMEM __SecondOn_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_BLACK}
+//);
+//
+//const rgblight_segment_t PROGMEM __power1_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_RED}
+//);
+//
+//
+//// BT Connections, Q/1, W/2, E/3
+//const rgblight_segment_t PROGMEM __power4_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_BLUE}
+//);
+//const rgblight_segment_t PROGMEM __power2_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_YELLOW}
+//);
+//const rgblight_segment_t PROGMEM __power3_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_RED}
+//);
+//const rgblight_segment_t PROGMEM __power5_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_BLACK}
+//);
+//
+//// Wifi Connetions, R/1
+//const rgblight_segment_t PROGMEM __power6_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_GREEN}
+//);
+//const rgblight_segment_t PROGMEM __power7_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_BLACK}
+//);
+//
+//
+//const rgblight_segment_t PROGMEM __power8_layer_layer11[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_GREEN}
+//);
+//
+//
+//const rgblight_segment_t PROGMEM __power8_layer_layer12[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_RED}
+//);
+//
+//const rgblight_segment_t PROGMEM __power8_layer_layer13[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_BLACK}
+//);
+//
+//
+//const rgblight_segment_t PROGMEM __power8_layer_layer14[] = RGBLIGHT_LAYER_SEGMENTS(
+//    {0, 2, HSV_WHITE}
+//);
+//
+//
+//
+//const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
+//     _SecondOff_layer, //0
+//    __SecondOn_layer_layer, //1
+//    __power1_layer_layer, //2
+//
+//    __power4_layer_layer, //3
+//    __power2_layer_layer, //4
+//    __power3_layer_layer, //5
+//    __power5_layer_layer, //6
+//    __power6_layer_layer, //7
+//    __power7_layer_layer, //8
+//    __power8_layer_layer11, //9 
+//    __power8_layer_layer12, //10
+//    __power8_layer_layer13, //11
+//    __power8_layer_layer14  //12
+//);
 
-const rgblight_segment_t PROGMEM __power1_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_RED}
-);
-
-
-// BT Connections, Q/1, W/2, E/3
-const rgblight_segment_t PROGMEM __power4_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLUE}
-);
-const rgblight_segment_t PROGMEM __power2_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_YELLOW}
-);
-const rgblight_segment_t PROGMEM __power3_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_RED}
-);
-const rgblight_segment_t PROGMEM __power5_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLACK}
-);
-
-// Wifi Connetions, R/1
-const rgblight_segment_t PROGMEM __power6_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_GREEN}
-);
-const rgblight_segment_t PROGMEM __power7_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLACK}
-);
-
-
-const rgblight_segment_t PROGMEM __power8_layer_layer11[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_GREEN}
-);
-
-
-const rgblight_segment_t PROGMEM __power8_layer_layer12[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_RED}
-);
-
-const rgblight_segment_t PROGMEM __power8_layer_layer13[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLACK}
-);
-
-
-const rgblight_segment_t PROGMEM __power8_layer_layer14[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_WHITE}
-);
-
-
-
-const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
-     _SecondOff_layer,
-    __SecondOn_layer_layer,
-    __power1_layer_layer,
-
-    __power4_layer_layer,
-    __power2_layer_layer,
-    __power3_layer_layer,
-    __power5_layer_layer,
-    __power6_layer_layer,
-    __power7_layer_layer,
-    __power8_layer_layer11,
-    __power8_layer_layer12,
-    __power8_layer_layer13,
-    __power8_layer_layer14
-);
-
-#endif
+//#endif
 
 /*fullKeyRolloverSwitching*/
 void key_nkro_toggle(void) {
@@ -393,7 +393,7 @@ void keyboard_post_init_kb(void)
      debug_keyboard=true;
     // debug_matrix=true;
     // debug_mouse=true;
-    rgblight_layers = my_rgb_layers;
+//    rgblight_layers = my_rgb_layers;
     // setPinOutput(ARGB_LEFT_EN);
     // writePinHigh(ARGB_LEFT_EN);
     AFIO->MAPR = (AFIO->MAPR & ~AFIO_MAPR_SWJ_CFG_Msk);
@@ -795,18 +795,18 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
    if(sleep_switch_driverflag) 
    {
         rgb_matrix_set_color_all(0,0,0);
-         rgblight_set_layer_state(1,true);
+//         rgblight_set_layer_state(1,true);
         sleep_switch_driverflag = sleep_switch_driverflag -1;
   
 
         if(sleep_switch_driverflag == 50)
         { 
-            //侧灯所有开关全关掉
-            rgblight_set_layer_state(0,false);
-            for(uint8_t i = 2;i < 12; i++)
-            {
-              rgblight_set_layer_state(i,false);
-            }  
+            //Turn off all side light switches.
+//            rgblight_set_layer_state(0,false);
+//            for(uint8_t i = 2;i < 12; i++)
+//            {
+//              rgblight_set_layer_state(i,false);
+//            }  
             setPinOutput(ARGB_LEFT_EN);
             writePinHigh(ARGB_LEFT_EN);
         }
@@ -816,7 +816,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
 
         if(sleep_switch_driverflag == 0)
         {
-            rgblight_set_layer_state(1,false);
+//            rgblight_set_layer_state(1,false);
 
         }
    }
@@ -833,11 +833,11 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
             if(shut_up_Flag || lock_keyboard )
             {
                 rgb_matrix_set_color_all(0,0,0);
-                rgblight_set_layer_state(1,true);
+//                rgblight_set_layer_state(1,true);
             }
 
             else{
-                rgblight_set_layer_state(1,false);
+//                rgblight_set_layer_state(1,false);
             }
 
 
@@ -858,19 +858,19 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
                 {
                   if(timer_elapsed32(encoder_longpresstimer) < 1200)
                   { 
-                            rgblight_set_layer_state(12,true);
+//                            rgblight_set_layer_state(12,true);
                   }
                   else
                   {
                              encode_toggle_flag = 0;
-                            rgblight_set_layer_state(12,false);
+//                            rgblight_set_layer_state(12,false);
                   }
                 }
             }
             else //Prevent mode switching during flash duration (???)
             {
                          encode_toggle_flag = 0;
-                         rgblight_set_layer_state(12,false);
+//                         rgblight_set_layer_state(12,false);
             }
     
 
@@ -884,32 +884,32 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
             {
                 if (blink_num != 0) {  
                     BT_24G_Shine = 0;
-                    rgblight_set_layer_state(6,false);
-                    rgblight_set_layer_state(3,false);
-                    rgblight_set_layer_state(4,false);
-                    rgblight_set_layer_state(5,false);
-                    rgblight_set_layer_state(7,false);
-                    rgblight_set_layer_state(8,false);
-                    rgblight_set_layer_state(9,false);
-                    rgblight_set_layer_state(10,false);
-                    rgblight_set_layer_state(11,false);
+//                    rgblight_set_layer_state(6,false);
+//                    rgblight_set_layer_state(3,false);
+//                    rgblight_set_layer_state(4,false);
+//                    rgblight_set_layer_state(5,false);
+//                    rgblight_set_layer_state(7,false);
+//                    rgblight_set_layer_state(8,false);
+//                    rgblight_set_layer_state(9,false);
+//                    rgblight_set_layer_state(10,false);
+//                    rgblight_set_layer_state(11,false);
                     if (Valorspd_counter < Valorspd_period)
                     {   
 
-                        rgblight_set_layer_state(0,true); //亮
-                        rgblight_set_layer_state(1,false); 
+//                        rgblight_set_layer_state(0,true); //亮
+//                        rgblight_set_layer_state(1,false); 
                     }
                     else
                     {
-                        rgblight_set_layer_state(0,false); //亮
-                        rgblight_set_layer_state(1,true); 
+//                        rgblight_set_layer_state(0,false); //亮
+//                        rgblight_set_layer_state(1,true); 
                     }
                 } 
                 else { 
                     if(reset_flag)
                     {
-                        rgblight_set_layer_state(0,false);
-                        rgblight_set_layer_state(1,false);
+//                        rgblight_set_layer_state(0,false);
+//                        rgblight_set_layer_state(1,false);
                         eeconfig_init();
                         mcu_reset();   
                     }
@@ -996,8 +996,8 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
                     if(lowpower_effect == 1)
                     {
                         lowpower_effect = 2;
-                        rgblight_set_layer_state(11,false);
-                        rgblight_set_layer_state(10,false);
+//                        rgblight_set_layer_state(11,false);
+//                        rgblight_set_layer_state(10,false);
                     }
 
 
@@ -1012,17 +1012,21 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
                        }
                       if(timer_elapsed32(keyborad_Chrgtimer) < 5000)
                       {
-                        rgblight_set_layer_state(9,true);
+                          rgb_matrix_set_color(3,0,255,0);
+//                        rgblight_set_layer_state(9,true);
                       }
                       else{
-                        rgblight_set_layer_state(9,false);
+                          rgb_matrix_set_color(3,0,0,0);
+//                        rgblight_set_layer_state(9,false);
                       }      
                     }
                     else{
                         chag_first_flag = 0;
 
-                        chag_via_flag = 0; 
-                        rgblight_set_layer_state(9,false);
+                        chag_via_flag = 0;
+
+                        rgb_matrix_set_color(3,0,0,0);
+//                        rgblight_set_layer_state(9,false);
                     }
 
 
@@ -1061,7 +1065,9 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
 
                     chag_via_flag = 0;
                     Plug_In_Flag = 0;
-                    rgblight_set_layer_state(9,false);
+
+                    rgb_matrix_set_color(3,0,0,0);
+//                    rgblight_set_layer_state(9,false);
                     // Power_Full_Flag = 0;
                     //低电报警
                     lowpower_effect = 1;
@@ -1071,13 +1077,16 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
                     {
                         if(power_counter < power_period)
                         {
-                            rgblight_set_layer_state(10,true);  //亮红
-                            rgblight_set_layer_state(11,false);
+                            rgb_matrix_set_color(3,255,0,0);
+//                            rgblight_set_layer_state(10,true);  //亮红
+//                            rgblight_set_layer_state(11,false);
                         }
                         else
                         {
-                            rgblight_set_layer_state(10,false);//亮黑
-                            rgblight_set_layer_state(11,true);
+//                            rgblight_set_layer_state(10,false);//亮黑
+//                            rgblight_set_layer_state(11,true);
+
+                            rgb_matrix_set_color(3,0,0,0);
                         }
                     }
                 }
@@ -1087,9 +1096,10 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
         {
             //模式灯效中关闭低电
                     chag_via_flag = 0;
-                    rgblight_set_layer_state(10,false);  //亮红
-                    rgblight_set_layer_state(11,false);
-                    rgblight_set_layer_state(9,false);
+                   rgb_matrix_set_color(3,0,0,0);
+//                    rgblight_set_layer_state(10,false);  //亮红
+//                    rgblight_set_layer_state(11,false);
+//                    rgblight_set_layer_state(9,false);
         }
         if(1 == flag32.mode_one)
         {
@@ -1489,19 +1499,19 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
     switch(kb_mode)
     {
         case KB_MODE_USB:
-                        rgblight_set_layer_state(6,false);
-                        rgblight_set_layer_state(3,false);
-                        rgblight_set_layer_state(4,false);
-                        rgblight_set_layer_state(5,false);
-                        rgblight_set_layer_state(7,false);
-                        rgblight_set_layer_state(8,false);
+//                        rgblight_set_layer_state(6,false);
+//                        rgblight_set_layer_state(3,false);
+//                        rgblight_set_layer_state(4,false);
+//                        rgblight_set_layer_state(5,false);
+//                        rgblight_set_layer_state(7,false);
+//                        rgblight_set_layer_state(8,false);
                     
         break;
 
         case KB_MODE_BLE:
 
-                rgblight_set_layer_state(7,false);
-                rgblight_set_layer_state(8,false);
+//                rgblight_set_layer_state(7,false);
+//                rgblight_set_layer_state(8,false);
                 if(!wireless_connected)
                 {             
                     if(timer_elapsed32(blink_ble_24g_timer) <= pair_timeout)
@@ -1509,55 +1519,65 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
                         switch (last_wireless_mode) 
                         {
                             case 1:
-                                 rgblight_set_layer_state(4,false);
-                                 rgblight_set_layer_state(5,false);
+//                                 rgblight_set_layer_state(4,false);
+//                                 rgblight_set_layer_state(5,false);
                                 if(ble24G_counter < ble24G_period)
                                 {
                                     // if(BT_Switch_Flag)
                                     // rgb_matrix_set_color(52,0,255,0); //蓝牙回连绿色，配对蓝色
                                     // else
-                                    // rgb_matrix_set_color(52,0,0,255);
+                                     rgb_matrix_set_color(52,0,0,255);
+                                    rgb_matrix_set_color(3,0,0,255);
                                
-                                    rgblight_set_layer_state(3,true);
-                                    rgblight_set_layer_state(6,false);
+//                                    rgblight_set_layer_state(3,true);
+//                                    rgblight_set_layer_state(6,false);
                                 }
                                 else
                                 {     
-                                     rgblight_set_layer_state(6,true);
-                                     rgblight_set_layer_state(3,false);
-                                    //rgb_matrix_set_color(52,0,0,0);
+//                                     rgblight_set_layer_state(6,true);
+//                                     rgblight_set_layer_state(3,false);
+                                    rgb_matrix_set_color(52,0,0,0);
+                                    rgb_matrix_set_color(3,0,0,0);
                                 }
                             break;
 
                             case 2: 
-                                 rgblight_set_layer_state(3,false);
-                                 rgblight_set_layer_state(5,false); 
+//                                 rgblight_set_layer_state(3,false);
+//                                 rgblight_set_layer_state(5,false); 
                                 if(ble24G_counter < ble24G_period)
                                 {
-                                    rgblight_set_layer_state(6,false);
-                                    rgblight_set_layer_state(4,true);;
+                                    rgb_matrix_set_color(51,200,128,0);
+                                    rgb_matrix_set_color(3,128,128,0);
+//                                    rgblight_set_layer_state(6,false);
+//                                    rgblight_set_layer_state(4,true);;
                                 
                                 }
                                 else
                                 {
-                                     rgblight_set_layer_state(4,false);
-                                     rgblight_set_layer_state(6,true);
+                                    rgb_matrix_set_color(51,0,0,0);
+                                    rgb_matrix_set_color(3,0,0,0);
+//                                     rgblight_set_layer_state(4,false);
+//                                     rgblight_set_layer_state(6,true);
                                   
                                 }
                             break;
 
                             case 3:
-                                 rgblight_set_layer_state(4,false);
-                                 rgblight_set_layer_state(3,false);  
+//                                 rgblight_set_layer_state(4,false);
+//                                 rgblight_set_layer_state(3,false);  
                                 if(ble24G_counter < ble24G_period)
                                 {
-                                    rgblight_set_layer_state(6,false);
-                                    rgblight_set_layer_state(5,true);;
+                                    rgb_matrix_set_color(50,255,0,0);
+                                    rgb_matrix_set_color(3,255,0,0);
+//                                    rgblight_set_layer_state(6,false);
+//                                    rgblight_set_layer_state(5,true);;
                                 }
                                 else
                                 {
-                                     rgblight_set_layer_state(5,false);
-                                     rgblight_set_layer_state(6,true);
+                                    rgb_matrix_set_color(50,0,0,0);
+                                    rgb_matrix_set_color(3,0,0,0);
+//                                     rgblight_set_layer_state(5,false);
+//                                     rgblight_set_layer_state(6,true);
                                   
                                 }     
                             break;
@@ -1566,10 +1586,11 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
                         }
                     }
                     else{
-                        rgblight_set_layer_state(6,false);
-                        rgblight_set_layer_state(3,false);
-                        rgblight_set_layer_state(4,false);
-                        rgblight_set_layer_state(5,false);
+//                        rgblight_set_layer_state(6,false);
+//                        rgblight_set_layer_state(3,false);
+//                        rgblight_set_layer_state(4,false);
+//                        rgblight_set_layer_state(5,false);
+                        rgb_matrix_set_color(3,0,0,0);
                         POWER_EnterSleep();  
                          BT_24G_Shine = 0;  
                     }
@@ -1580,26 +1601,26 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
                 }
                 else    
                 {
-                     rgblight_set_layer_state(6,false);
+//                     rgblight_set_layer_state(6,false);
                     flag32.link_break_flag = 1;
                     if(timer_elapsed32(pair_succeed_timer) <= PAIR_SUCCEED_TIME)
                     {
-                          rgblight_set_layer_state(6,false);
+//                          rgblight_set_layer_state(6,false);
                         switch (last_wireless_mode) 
                         {
                             case 1:
-                                     rgblight_set_layer_state(3,true);
+//                                     rgblight_set_layer_state(3,true);
                                      
                             break;
 
                             case 2:   
 
-                                      rgblight_set_layer_state(4,true);
+//                                      rgblight_set_layer_state(4,true);
                             break;
 
                             case 3:   
 
-                                      rgblight_set_layer_state(5,true);
+//                                      rgblight_set_layer_state(5,true);
                             break;
                             default:
                                 break;
@@ -1609,10 +1630,10 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
                     else
                     {
                          BT_24G_Shine = 0; 
-                        rgblight_set_layer_state(3,false);
-                        rgblight_set_layer_state(4,false);
-                        rgblight_set_layer_state(5,false);
-                        rgblight_set_layer_state(6,false);
+//                        rgblight_set_layer_state(3,false);
+//                        rgblight_set_layer_state(4,false);
+//                        rgblight_set_layer_state(5,false);
+//                        rgblight_set_layer_state(6,false);
                         flag32.mode_one = 0;                                          
                     }  
                 }
@@ -1620,28 +1641,32 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
 
         case KB_MODE_24G:
 
-                    rgblight_set_layer_state(6,false);
-                    rgblight_set_layer_state(3,false);
-                    rgblight_set_layer_state(4,false);
-                    rgblight_set_layer_state(5,false);
+//                    rgblight_set_layer_state(6,false);
+//                    rgblight_set_layer_state(3,false);
+//                    rgblight_set_layer_state(4,false);
+//                    rgblight_set_layer_state(5,false);
                 if(!wireless_connected)
                 {
                     if(timer_elapsed32(blink_ble_24g_timer) <= pair_timeout)
                     {
                         if(ble24G_counter < ble24G_period)
                         {
-                                rgblight_set_layer_state(8,false);
-                                rgblight_set_layer_state(7,true);
+                            rgb_matrix_set_color(3,0,255,0);
+                            rgb_matrix_set_color(49,0,255,0);
+//                                rgblight_set_layer_state(8,false);
+//                                rgblight_set_layer_state(7,true);
                         }
                         else 
                         {
-                               rgblight_set_layer_state(7,false);
-                               rgblight_set_layer_state(8,true);
+                            rgb_matrix_set_color(3,0,0,0);
+                            rgb_matrix_set_color(49,0,0,0);
+//                               rgblight_set_layer_state(7,false);
+//                               rgblight_set_layer_state(8,true);
                         } 
                     }
                     else{
-                                rgblight_set_layer_state(7,false);
-                                rgblight_set_layer_state(8,false);
+//                                rgblight_set_layer_state(7,false);
+//                                rgblight_set_layer_state(8,false);
                                 POWER_EnterSleep();
                                 BT_24G_Shine = 0;  
                     }
@@ -1655,13 +1680,17 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
                     flag32.link_break_flag = 1;
                     if(timer_elapsed32(pair_succeed_timer) <= PAIR_SUCCEED_TIME)
                     {
-                          rgblight_set_layer_state(8,false);
-                          rgblight_set_layer_state(7,true);
+                            rgb_matrix_set_color(3,255,0,0);
+                            rgb_matrix_set_color(55,255,0,0);
+//                          rgblight_set_layer_state(8,false);
+//                          rgblight_set_layer_state(7,true);
                     }
                     else
                     {
-                          rgblight_set_layer_state(7,false);
-                          rgblight_set_layer_state(8,false);
+                        rgb_matrix_set_color(3,0,0,0);
+                        rgb_matrix_set_color(55,0,0,0);
+//                          rgblight_set_layer_state(7,false);
+//                          rgblight_set_layer_state(8,false);
                            BT_24G_Shine = 0;                                 
                     } 
                     
@@ -2116,12 +2145,12 @@ void sleep_mode(void)
         if(timer_elapsed32(blink_ble_24g_timer) >= pair_timeout)
         {
             //增加滅燈操作
-            rgblight_set_layer_state(6,false);
-            rgblight_set_layer_state(3,false);
-            rgblight_set_layer_state(4,false);
-            rgblight_set_layer_state(5,false);
-            rgblight_set_layer_state(7,false);
-            rgblight_set_layer_state(8,false);
+//            rgblight_set_layer_state(6,false);
+//            rgblight_set_layer_state(3,false);
+//            rgblight_set_layer_state(4,false);
+//            rgblight_set_layer_state(5,false);
+//            rgblight_set_layer_state(7,false);
+//            rgblight_set_layer_state(8,false);
             POWER_EnterSleep();  
             BT_24G_Shine = 0;  
         }
