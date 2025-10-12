@@ -1,0 +1,41 @@
+info.json
+	屏蔽  "rgblight": {}	和    "ws2812": {
+   				     "pin": "C10"
+    				     },
+	
+	"features": {
+			"rgblight": false,
+		}
+
+rules.mk	
+	SRC +=   analog.c \
+		 smart_ble.c \
+		sc_ws2812.c
+config.h
+	#define SC_WS2812_DI_PIN A10
+	#define SC_WS2812_LED_COUNT 4
+
+mmd81.c
+	#include "sc_ws2812.h"
+	LED_TYPE leds[4] = {{.r =20, .g = 0, .b = 0},{.r = 0, .g = 20, .b = 0},{.r = 0, .g = 0, .b = 20},{.r = 20, .g = 20, .b = 20}};
+	
+
+
+            bool rgb_matrix_indicators_kb(void) 
+           {
+	 static HSV h = {0, 255, 20};
+	 static uint32_t sc_ws2812_timer;
+	 if(timer_elapsed32(sc_ws2812_timer) > 33)
+	 {
+      		  h.h+=10;
+       		  RGB c = hsv_to_rgb(h);
+     	  	  leds[3]=leds[2];
+   		  leds[2]=leds[1];
+   		  leds[1]=leds[0];
+    		  leds[0].r=c.r,
+     		  leds[0].g=c.g,
+    		  leds[0].b=c.b,
+    		  sc_ws2812_timer=timer_read32();
+    		  sc_ws2812_setleds(leds, 4);
+    	  }
+            }
