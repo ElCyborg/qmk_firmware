@@ -151,7 +151,7 @@ void key_nkro_toggle(void) {
         nkro_flag = keymap_config.nkro;
         // dynamic_keymap_set_keycode(1, 1, 0, nkro_flag);
         variable_data.eeconfig_nkro_flag = keymap_config.nkro;
-        eeconfig_update_kb_datablock(&variable_data);
+        eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
     }
 }
 
@@ -283,11 +283,11 @@ void keyboard_post_init_kb(void) {
     // //fullKeyRolloverWithMemory
     // nkro_flag       = dynamic_keymap_get_keycode(1, 1, 0);
     // keymap_config.nkro = nkro_flag;
-    eeconfig_read_kb_datablock(&variable_data);            // 读出数据
+    eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);            // 读出数据
     keymap_config.nkro = variable_data.eeconfig_nkro_flag; /*是否开启全全键无冲*/
     encode_toggle      = variable_data.eeconfig_encode_toggle;
     last_wireless_mode = variable_data.eeconfig_last_wireless_mode;
-    eeconfig_update_keymap(keymap_config.raw);
+    eeconfig_update_keymap(&keymap_config);
 
     // //virtualKeys
     // encode_toggle = dynamic_keymap_get_keycode(0, 4, 9);
@@ -377,7 +377,7 @@ uint32_t       loop_10Hz(uint32_t trigger_time, void *cb_arg) {
                 encode_toggle_flag     = 1;
                 encoder_longpresstimer = timer_read32();
             }
-            eeconfig_update_kb_datablock(&variable_data);
+            eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
             encode_Press_flag = 0;
         }
     }

@@ -201,16 +201,16 @@ void WIRELESS_PAIR(uint32_t mode)
             // uint32_t temp = eeconfig_read_kb();
             // eeconfig_update_kb(temp|4);
             uint32_t temp;
-            eeconfig_read_kb_datablock(&variable_data);
+            eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
             temp                                      = variable_data.eeconfig_last_wireless_mode;
             variable_data.eeconfig_last_wireless_mode = temp | 4;
-            eeconfig_update_kb_datablock(&variable_data);
+            eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
             last_wireless_mode=temp|4;
         }
         else
         {
             variable_data.eeconfig_last_wireless_mode = mode;
-            eeconfig_update_kb_datablock(&variable_data);
+            eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
             // eeconfig_update_kb(mode);
             last_wireless_mode=mode;
         }   
@@ -260,16 +260,16 @@ void WIRELESS_START(uint32_t mode)
                    // uint32_t temp = eeconfig_read_kb();
                     // eeconfig_update_kb(temp|4);
                     uint32_t temp;
-                    eeconfig_read_kb_datablock(&variable_data);
+                    eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
                     temp                                      = variable_data.eeconfig_last_wireless_mode;
                     variable_data.eeconfig_last_wireless_mode = temp | 4;
-                    eeconfig_update_kb_datablock(&variable_data);
+                    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
                     last_wireless_mode=temp|4;
                 }
                 else
                 {
                     variable_data.eeconfig_last_wireless_mode = mode;
-                    eeconfig_update_kb_datablock(&variable_data);
+                    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
                     // eeconfig_update_kb(mode);
                     last_wireless_mode=mode;
                 } 
