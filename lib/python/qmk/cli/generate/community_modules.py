@@ -52,7 +52,7 @@ def _render_keycodes(module_jsons):
             lines.append('')
     lines.append('    LAST_COMMUNITY_MODULE_KEY')
     lines.append('};')
-    lines.append('_Static_assert((int)LAST_COMMUNITY_MODULE_KEY <= (int)(QK_COMMUNITY_MODULE_MAX+1), "Too many community module keycodes");')
+    lines.append('STATIC_ASSERT((int)LAST_COMMUNITY_MODULE_KEY <= (int)(QK_COMMUNITY_MODULE_MAX+1), "Too many community module keycodes");')
     return lines
 
 
@@ -76,6 +76,8 @@ def _render_api_implementations(api, module):
         lines.append(f'__attribute__((weak)) {api.ret_type} {api.name}_{module_name}_user({api.args}) {{')
         if api.ret_type == 'bool':
             lines.append('    return true;')
+        elif api.ret_type in ['layer_state_t', 'report_mouse_t']:
+            lines.append(f'    return {api.call_params};')
         else:
             pass
         lines.append('}')
@@ -86,6 +88,8 @@ def _render_api_implementations(api, module):
         if api.ret_type == 'bool':
             lines.append(f'    if(!{api.name}_{module_name}_user({api.call_params})) {{ return false; }}')
             lines.append('    return true;')
+        elif api.ret_type in ['layer_state_t', 'report_mouse_t']:
+            lines.append(f'    return {api.name}_{module_name}_user({api.call_params});')
         else:
             lines.append(f'    {api.name}_{module_name}_user({api.call_params});')
         lines.append('}')
@@ -96,6 +100,8 @@ def _render_api_implementations(api, module):
         if api.ret_type == 'bool':
             lines.append(f'    if(!{api.name}_{module_name}_kb({api.call_params})) {{ return false; }}')
             lines.append('    return true;')
+        elif api.ret_type in ['layer_state_t', 'report_mouse_t']:
+            lines.append(f'    return {api.name}_{module_name}_kb({api.call_params});')
         else:
             lines.append(f'    {api.name}_{module_name}_kb({api.call_params});')
         lines.append('}')
@@ -113,10 +119,14 @@ def _render_core_implementation(api, modules):
             module_name = Path(module).name
             if api.ret_type == 'bool':
                 lines.append(f'        && {api.name}_{module_name}({api.call_params})')
+            elif api.ret_type in ['layer_state_t', 'report_mouse_t']:
+                lines.append(f'    {api.call_params} = {api.name}_{module_name}({api.call_params});')
             else:
                 lines.append(f'    {api.name}_{module_name}({api.call_params});')
         if api.ret_type == 'bool':
             lines.append('    ;')
+        elif api.ret_type in ['layer_state_t', 'report_mouse_t']:
+            lines.append(f'    return {api.call_params};')
         lines.append('}')
     return lines
 
@@ -205,9 +215,11 @@ def generate_community_modules_h(cli):
         '#include <stdbool.h>',
         '#include <keycodes.h>',
         '',
+        '#include "compiler_support.h"',
+        '',
         '#define COMMUNITY_MODULES_API_VERSION_BUILDER(ver_major,ver_minor,ver_patch) (((((uint32_t)(ver_major))&0xFF) << 24) | ((((uint32_t)(ver_minor))&0xFF) << 16) | (((uint32_t)(ver_patch))&0xFF))',
         f'#define COMMUNITY_MODULES_API_VERSION COMMUNITY_MODULES_API_VERSION_BUILDER({ver_major},{ver_minor},{ver_patch})',
-        f'#define ASSERT_COMMUNITY_MODULES_MIN_API_VERSION(ver_major,ver_minor,ver_patch) _Static_assert(COMMUNITY_MODULES_API_VERSION_BUILDER(ver_major,ver_minor,ver_patch) <= COMMUNITY_MODULES_API_VERSION, "Community module requires a newer version of QMK modules API -- needs: " #ver_major "." #ver_minor "." #ver_patch ", current: {api_version}.")',
+        f'#define ASSERT_COMMUNITY_MODULES_MIN_API_VERSION(ver_major,ver_minor,ver_patch) STATIC_ASSERT(COMMUNITY_MODULES_API_VERSION_BUILDER(ver_major,ver_minor,ver_patch) <= COMMUNITY_MODULES_API_VERSION, "Community module requires a newer version of QMK modules API -- needs: " #ver_major "." #ver_minor "." #ver_patch ", current: {api_version}.")',
         '',
         'typedef struct keyrecord_t keyrecord_t; // forward declaration so we don\'t need to include quantum.h',
         '',
@@ -268,33 +280,32 @@ def generate_community_modules_c(cli):
     dump_lines(cli.args.output, lines, cli.args.quiet, remove_repeated_newlines=True)
 
 
+def _generate_include_per_module(cli, include_file_name):
+    """Generates C code to include "<module_path>/include_file_name" for each module."""
+    if cli.args.output and cli.args.output.name == '-':
+        cli.args.output = None
+
+    lines = [GPL2_HEADER_C_LIKE, GENERATED_HEADER_C_LIKE]
+
+    for module in get_modules(cli.args.keyboard, cli.args.filename):
+        full_path = f'{find_module_path(module)}/{include_file_name}'
+        lines.append('')
+        lines.append(f'#if __has_include("{full_path}")')
+        lines.append(f'#include "{full_path}"')
+        lines.append(f'#endif  // __has_include("{full_path}")')
+
+    dump_lines(cli.args.output, lines, cli.args.quiet, remove_repeated_newlines=True)
+
+
 @cli.argument('-o', '--output', arg_only=True, type=qmk.path.normpath, help='File to write to')
 @cli.argument('-q', '--quiet', arg_only=True, action='store_true', help="Quiet mode, only output error messages")
-@cli.argument('-kb', '--keyboard', arg_only=True, type=keyboard_folder, completer=keyboard_completer, help='Keyboard to generate community_modules.c for.')
+@cli.argument('-kb', '--keyboard', arg_only=True, type=keyboard_folder, completer=keyboard_completer, help='Keyboard to generate community_modules_introspection.h for.')
 @cli.argument('filename', nargs='?', type=qmk.path.FileType('r'), arg_only=True, completer=FilesCompleter('.json'), help='Configurator JSON file')
 @cli.subcommand('Creates a community_modules_introspection.h from a keymap.json file.')
 def generate_community_modules_introspection_h(cli):
     """Creates a community_modules_introspection.h from a keymap.json file
     """
-    if cli.args.output and cli.args.output.name == '-':
-        cli.args.output = None
-
-    lines = [
-        GPL2_HEADER_C_LIKE,
-        GENERATED_HEADER_C_LIKE,
-        '',
-    ]
-
-    modules = get_modules(cli.args.keyboard, cli.args.filename)
-    if len(modules) > 0:
-        for module in modules:
-            module_path = find_module_path(module)
-            lines.append(f'#if __has_include("{module_path}/introspection.h")')
-            lines.append(f'#include "{module_path}/introspection.h"')
-            lines.append(f'#endif  // __has_include("{module_path}/introspection.h")')
-            lines.append('')
-
-    dump_lines(cli.args.output, lines, cli.args.quiet, remove_repeated_newlines=True)
+    _generate_include_per_module(cli, 'introspection.h')
 
 
 @cli.argument('-o', '--output', arg_only=True, type=qmk.path.normpath, help='File to write to')
@@ -305,22 +316,26 @@ def generate_community_modules_introspection_h(cli):
 def generate_community_modules_introspection_c(cli):
     """Creates a community_modules_introspection.c from a keymap.json file
     """
-    if cli.args.output and cli.args.output.name == '-':
-        cli.args.output = None
+    _generate_include_per_module(cli, 'introspection.c')
 
-    lines = [
-        GPL2_HEADER_C_LIKE,
-        GENERATED_HEADER_C_LIKE,
-        '',
-    ]
 
-    modules = get_modules(cli.args.keyboard, cli.args.filename)
-    if len(modules) > 0:
-        for module in modules:
-            module_path = find_module_path(module)
-            lines.append(f'#if __has_include("{module_path}/introspection.c")')
-            lines.append(f'#include "{module_path}/introspection.c"')
-            lines.append(f'#endif  // __has_include("{module_path}/introspection.c")')
-            lines.append('')
+@cli.argument('-o', '--output', arg_only=True, type=qmk.path.normpath, help='File to write to')
+@cli.argument('-q', '--quiet', arg_only=True, action='store_true', help="Quiet mode, only output error messages")
+@cli.argument('-kb', '--keyboard', arg_only=True, type=keyboard_folder, completer=keyboard_completer, help='Keyboard to generate led_matrix_community_modules.inc for.')
+@cli.argument('filename', nargs='?', type=qmk.path.FileType('r'), arg_only=True, completer=FilesCompleter('.json'), help='Configurator JSON file')
+@cli.subcommand('Creates an led_matrix_community_modules.inc from a keymap.json file.')
+def generate_led_matrix_community_modules_inc(cli):
+    """Creates an led_matrix_community_modules.inc from a keymap.json file
+    """
+    _generate_include_per_module(cli, 'led_matrix_module.inc')
 
-    dump_lines(cli.args.output, lines, cli.args.quiet, remove_repeated_newlines=True)
+
+@cli.argument('-o', '--output', arg_only=True, type=qmk.path.normpath, help='File to write to')
+@cli.argument('-q', '--quiet', arg_only=True, action='store_true', help="Quiet mode, only output error messages")
+@cli.argument('-kb', '--keyboard', arg_only=True, type=keyboard_folder, completer=keyboard_completer, help='Keyboard to generate rgb_matrix_community_modules.inc for.')
+@cli.argument('filename', nargs='?', type=qmk.path.FileType('r'), arg_only=True, completer=FilesCompleter('.json'), help='Configurator JSON file')
+@cli.subcommand('Creates an rgb_matrix_community_modules.inc from a keymap.json file.')
+def generate_rgb_matrix_community_modules_inc(cli):
+    """Creates an rgb_matrix_community_modules.inc from a keymap.json file
+    """
+    _generate_include_per_module(cli, 'rgb_matrix_module.inc')
