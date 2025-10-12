@@ -123,6 +123,8 @@
 
 
 
+#include <stdint.h>
+#include "stm32f103xe.h"
 #include "adc.h"
 #include "quantum.h"
 
