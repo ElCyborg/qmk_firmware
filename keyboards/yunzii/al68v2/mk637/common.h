@@ -71,8 +71,6 @@ enum custom_keycodes {
   KC_BAT,
   KC_RESET,
   KC_WIN,
-  KC_WINMODE,
-  KC_MACMODE,
   KC_SHUTRGB,
   KC_RRWIN,
   KC_MODEPLUS,

@@ -72,15 +72,11 @@ static uint8_t encode_Press_flag  = 0;
 
 uint8_t         lock_keyboard       = 0;
 static uint32_t encode_toggle_timer = 0; // 旋钮计时
-static uint32_t Doubele_Fn_timer    = 0; // fn计时
 static uint32_t First_timer         = 0; // fn计时
-// static uint32_t Power_Full_timer          = 0;    //fn计时
-static uint32_t Media_timer        = 0; // fn计时
 uint8_t         sleep_shutled_flag = 0;
 // uint8_t  Power_Full_Flag = 0;
 uint8_t FN_Count    = 0;
 uint8_t test_number = 0;
-uint8_t Media_Flag  = 0;
 uint8_t Plug_In_Flag;
 uint8_t lowpower_effect;
 uint8_t chag_via_flag;
@@ -178,21 +174,6 @@ void    get_mode(void) {
         kb_mode = KB_MODE_USB;
     }
 
-    // if (!readPin(SYS_SW) && (WinLayer_Flag == 0))
-    // {
-    //     WinLayer_Flag = 1;
-    //     MacLayer_Flag = 0;
-    //     set_single_persistent_default_layer(2);
-    //   //  uprintf("win\r\n");
-    // }
-
-    // if (readPin(SYS_SW) && (MacLayer_Flag == 0))
-    // {
-    //     MacLayer_Flag = 1;
-    //     WinLayer_Flag = 0;
-    //     set_single_persistent_default_layer(0);
-    //     //uprintf("mac\r\n");
-    // }
 }
 
 #ifdef mk637_special_isr
@@ -411,21 +392,6 @@ uint32_t       loop_10Hz(uint32_t trigger_time, void *cb_arg) {
     // prevent prolonged button presses
     if (timer_elapsed32(First_timer) > 400) {
         FN_Count = 0;
-    }
-
-    if (timer_elapsed32(Media_timer) > 100 && (Media_Flag == 1) && (FN_Count == 0)) {
-        Media_Flag = 2;
-
-        current_layer = get_highest_layer(layer_state | default_layer);
-        if (current_layer == 0) {
-            set_single_persistent_default_layer(4);
-        } else if (current_layer == 2) {
-            set_single_persistent_default_layer(6);
-        } else if (current_layer == 4) {
-            set_single_persistent_default_layer(0);
-        } else if (current_layer == 6) {
-            set_single_persistent_default_layer(2);
-        }
     }
 
     // Detect battery status before sending; send only when idle.
@@ -768,39 +734,6 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 
     //
 
-    // 增加双击fn切层的功能
-    if (keycode == MO(5) || (keycode == MO(7)) || keycode == MO(1) || (keycode == MO(3))) {
-        if (record->event.pressed) {
-            First_timer = timer_read32();
-            FN_Count++;
-            if (timer_elapsed32(Doubele_Fn_timer) < 200 && (FN_Count == 1)) // 第三次快速按下时清0
-            {
-                FN_Count   = 0;
-                Media_Flag = 0;
-                return true; // 第三次直接推出去
-            }
-
-            // 第一次松开到第二次按下的时间间隔小于
-            if (timer_elapsed32(Doubele_Fn_timer) < 200 && (FN_Count == 2)) {
-                // 开始计时，超过200ms
-                // 切层
-                FN_Count    = 0;
-                Media_Flag  = 1;
-                Media_timer = timer_read32();
-            }
-            if (FN_Count == 2) {
-                FN_Count = 0;
-            }
-        } else {
-            //  if(timer_elapsed32(First_timer) > 400)
-            //  {
-            //     FN_Count = 0;
-            //  }
-            // 松开开始计时
-            Doubele_Fn_timer = timer_read32();
-        }
-        return true;
-    }
 
     // 增加长按切换旋钮的功能 ENC_TG
     if (keycode == ENC_TG) {
@@ -817,38 +750,6 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 encode_toggle_timer = timer_read32();
             }
             encode_Press_flag = 0;
-        }
-        return false;
-    }
-
-    // 0    1    2     3   4    5    6     7
-    // win      mac       win        mac
-    // 1    2    4     8   16  32    64   128    default
-
-    // windows和IOS切换处理
-    if (keycode == KC_WINMODE) {
-        if (record->event.pressed) {
-            if (default_layer == 4) {
-                set_single_persistent_default_layer(0); // Sets the default layer and writes it to persistent memory (EEPROM).
-            } else if (default_layer == 64) {
-                set_single_persistent_default_layer(4);
-            }
-        }
-        return false;
-    }
-
-    // 0    1    2     3   4    5    6     7
-    // win      mac       win        mac
-    // 1    2    4     8   16  32    64   128    default
-
-    if (keycode == KC_MACMODE) {
-        if (record->event.pressed) {
-            // fn双击以后切到第6层
-            if (default_layer == 1) {
-                set_single_persistent_default_layer(2); // Sets the default layer and writes it to persistent memory (EEPROM)
-            } else if (default_layer == 16) {
-                set_single_persistent_default_layer(6);
-            }
         }
         return false;
     }
