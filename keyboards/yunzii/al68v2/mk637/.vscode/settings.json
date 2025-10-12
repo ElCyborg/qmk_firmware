@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "mmd81.h": "c",
+        "batt_level.h": "c",
+        "y80_x3.h": "c",
+        "adc.h": "c",
+        "lamp_effect.h": "c",
+        "light_led_tab.h": "c"
+    }
+}
