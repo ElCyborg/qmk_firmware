@@ -86,7 +86,6 @@ uint8_t lowpower_effect;
 uint8_t chag_via_flag;
 uint8_t chag_first_flag;
 // static uint8_t Double_Fn_Flag = 0;
-uint8_t        lock_win_flag    = 1;
 static uint8_t Valorspd_counter = 0;
 static uint8_t Valorspd_period  = 3;
 static uint8_t blink_num        = 0;
@@ -286,7 +285,6 @@ void keyboard_post_init_kb(void) {
     // keymap_config.nkro = nkro_flag;
     eeconfig_read_kb_datablock(&variable_data);            // 读出数据
     keymap_config.nkro = variable_data.eeconfig_nkro_flag; /*是否开启全全键无冲*/
-    lock_win_flag      = variable_data.eeconfig_lock_win_flag;
     encode_toggle      = variable_data.eeconfig_encode_toggle;
     last_wireless_mode = variable_data.eeconfig_last_wireless_mode;
     eeconfig_update_keymap(keymap_config.raw);
@@ -297,7 +295,6 @@ void keyboard_post_init_kb(void) {
     wait_ms(1);
     wireless_connected = false;
     // last_wireless_mode = eeconfig_read_kb();
-    // lock_win_flag  = dynamic_keymap_get_keycode(1, 2, 0);
     flag32.mode_one    = 1;
     pair_succeed_timer = timer_read32();
     // adcInitialization
@@ -656,10 +653,6 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
             }
         }
 
-        if (0 == lock_win_flag && (wireless_connected || (kb_mode == KB_MODE_USB))) {
-            if (default_layer == 1 || (default_layer == 16)) rgb_matrix_set_color(22, 255, 255, 255);
-        }
-
         //  充电与充满灯效    //防止上电时看起来灯效会覆盖太快，限制下时间
 
         if (!BT_24G_Shine && (blink_num == 0)) {
@@ -930,22 +923,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 
     // question
 
-    if (((keycode == KC_WIN)) && record->event.pressed) {
-        lock_win_flag = !lock_win_flag;
-        //  dynamic_keymap_set_keycode(1, 2, 0,lock_win_flag);
-        variable_data.eeconfig_lock_win_flag = lock_win_flag;
-        eeconfig_update_kb_datablock(&variable_data);
-    }
 
-    if (record->event.pressed && ((keycode == KC_LGUI) || (keycode == KC_RGUI))) {
-        if (default_layer == 1 || (default_layer == 16)) // 第0层为1，第5层为16
-        {
-            if (lock_win_flag == 1)
-                return true;
-            else
-                return false;
-        }
-    }
 
     switch (keycode) {
         case KC_RESET:

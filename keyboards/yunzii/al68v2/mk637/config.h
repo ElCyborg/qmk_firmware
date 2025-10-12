@@ -20,7 +20,7 @@
 
 //eeconfig
 // #define EECONFIG_KB_DATA_SIZE 3
-#define EECONFIG_KB_DATA_SIZE  4
+#define EECONFIG_KB_DATA_SIZE  3
 
 #define RGBLIGHT_DISABLE_KEYCODES
 

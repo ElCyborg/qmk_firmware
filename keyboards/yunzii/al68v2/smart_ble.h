@@ -29,7 +29,6 @@ typedef struct  {
   uint8_t   eeconfig_last_wireless_mode;
   uint8_t   eeconfig_nkro_flag;
   uint8_t   eeconfig_encode_toggle;
-  uint8_t   eeconfig_lock_win_flag;
 }MyVariables;
 
 MyVariables  variable_data;
