@@ -322,6 +322,10 @@ __attribute__((weak)) bool transport_master_if_connected(matrix_row_t master_mat
 
 uint8_t matrix_scan(void) {
     matrix_row_t curr_matrix[MATRIX_ROWS] = {0};
+// #ifdef ReplaceKey
+//       uint16_t col_replace[16] ={1,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<14,1<<15};  
+// #endif
+
 
 #if defined(DIRECT_PINS) || (DIODE_DIRECTION == COL2ROW)
     // Set row, read cols
@@ -335,6 +339,16 @@ uint8_t matrix_scan(void) {
         matrix_read_rows_on_col(curr_matrix, current_col, row_shifter);
     }
 #endif
+//question 20240317
+// #ifdef ReplaceKey
+//           //后面还需要增加的替换键值依次类推即可，12替换为3
+//     if((curr_matrix[1] & (col_replace[1] | col_replace[2])) == (col_replace[1] | col_replace[2]))  
+//     {
+//         curr_matrix[1] &= ~(col_replace[1] | col_replace[2]);
+//         curr_matrix[1] |=  col_replace[3];
+
+//     }  
+// #endif
 
     bool changed = memcmp(raw_matrix, curr_matrix, sizeof(curr_matrix)) != 0;
     if (changed) memcpy(raw_matrix, curr_matrix, sizeof(curr_matrix));
@@ -344,6 +358,8 @@ uint8_t matrix_scan(void) {
 #else
     changed = debounce(raw_matrix, matrix, ROWS_PER_HAND, changed);
     matrix_scan_kb();
+ //   if(curr_matrix)
+
 #endif
     return (uint8_t)changed;
 }

@@ -26,7 +26,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
-
+#include <common.h>
 #include <lib/lib8tion/lib8tion.h>
 
 #ifndef RGB_MATRIX_CENTER
@@ -333,15 +333,85 @@ static void rgb_task_render(uint8_t effect) {
         rgb_task_state = FLUSHING;
         if (!rgb_effect_params.init && effect == RGB_MATRIX_NONE) {
             // We only need to flush once if we are RGB_MATRIX_NONE
-            rgb_task_state = SYNCING;
+            // rgb_task_state = SYNCING;  //keep flush wehn RGB_MATRIX_NONE to update RGBLIGHT  ..JackyJia..
         }
     }
 }
-
+ extern uint16_t sleep_switch_driverflag;
 static void rgb_task_flush(uint8_t effect) {
     // update last trackers after the first full render so we can init over several frames
     rgb_last_effect = effect;
     rgb_last_enable = rgb_matrix_config.enable;
+#ifdef Effect_TH60
+   // use MATRIX LEDS  as RGBLIGHT LEDS ..JackyJia
+    extern rgb_led_t led[RGBLIGHT_LED_COUNT];
+    for (uint8_t i=0;i<5;i++)
+    { 
+        rgb_matrix_set_color(65+i, led[i].r,led[i].g,led[i].b);
+    }
+
+    for (uint8_t i=0;i<2;i++)
+    {
+        rgb_matrix_set_color(85+i, led[i].r,led[i].g,led[i].b);
+    }
+
+    for (uint8_t i=0;i<14;i++)
+    {
+        rgb_matrix_set_color(i, led[i].r,led[i].g,led[i].b);
+    }
+#endif
+
+#ifdef Effect_MK637
+
+
+
+   if(sleep_switch_driverflag == 0)
+   {
+   // use MATRIX LEDS  as RGBLIGHT LEDS ..JackyJia
+        extern rgb_led_t led[RGBLIGHT_LED_COUNT];
+        for (uint8_t i=0;i<2;i++)  //3,4
+        { 
+            rgb_matrix_set_color(3+i, led[i].r,led[i].g,led[i].b);
+        }
+   }
+   
+
+#endif
+
+
+#ifdef Effect_bk100
+   // use MATRIX LEDS  as RGBLIGHT LEDS ..JackyJia
+    extern rgb_led_t led[RGBLIGHT_LED_COUNT];
+    rgb_matrix_set_color(1, led[0].r,led[0].g,led[0].b);
+    for (uint8_t i=1;i<4;i++)
+    { 
+        rgb_matrix_set_color(96+i, led[i].r,led[i].g,led[i].b);
+    }
+#endif
+
+
+#ifdef Effect_MK856
+   // use MATRIX LEDS  as RGBLIGHT LEDS ..JackyJia
+    extern rgb_led_t led[RGBLIGHT_LED_COUNT];
+    for (uint8_t i=0;i<3;i++)
+    { 
+        rgb_matrix_set_color(76+i, led[i].r,led[i].g,led[i].b);
+    }
+#endif
+
+#ifdef Effect_MK923
+
+
+   // use MATRIX LEDS  as RGBLIGHT LEDS ..JackyJia
+    extern rgb_led_t led[RGBLIGHT_LED_COUNT];
+    for (uint8_t i=0;i<6;i++)
+    { 
+        rgb_matrix_set_color(14+i, led[i].r,led[i].g,led[i].b);
+    }
+#endif
+
+
+
 
     // update pwm buffers
     rgb_matrix_update_pwm_buffers();
@@ -349,7 +419,6 @@ static void rgb_task_flush(uint8_t effect) {
     // next task
     rgb_task_state = SYNCING;
 }
-
 void rgb_matrix_task(void) {
     rgb_task_timers();
 

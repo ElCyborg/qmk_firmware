@@ -73,6 +73,7 @@
 #define RSA(kc) (QK_RSFT | QK_RALT | (kc))
 #define RCS(kc) (QK_RCTL | QK_RSFT | (kc))
 #define SAGR(kc) RSA(kc)
+#define LCG(kc) (QK_LCTL | QK_LGUI | (kc))  //ctrl + command
 
 // Modified keycode aliases
 #define C(kc) LCTL(kc)

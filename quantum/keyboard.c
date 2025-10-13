@@ -16,6 +16,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdint.h>
+//
+////#ifdef Screen_AP_UPDATE
+//#include "screeen_update.h"
+////#endif
 #include "keyboard.h"
 #include "keycode_config.h"
 #include "matrix.h"
@@ -32,6 +36,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "sendchar.h"
 #include "eeconfig.h"
 #include "action_layer.h"
+//#include "smart_ble.h"
+//#include "common.h"
+//#ifdef  LCD_Driver
+//#include "keyboard_screen.h"
+//#include "uart_mod.h"
+//#include "hygui.h"
+//#endif
 #ifdef BOOTMAGIC_ENABLE
 #    include "bootmagic.h"
 #endif
@@ -586,7 +597,7 @@ static bool matrix_task(void) {
  *
  * TODO: rationalise against keyboard_task and current split role
  */
-void quantum_task(void) {
+void     quantum_task(void) {
 #ifdef SPLIT_KEYBOARD
     // some tasks should only run on master
     if (!is_keyboard_master()) return;
@@ -744,6 +755,23 @@ void keyboard_task(void) {
 #endif
 
     led_task();
+
+//        //增加module升级
+//#ifdef  Module_Updata
+//Module_UpdataHandle();
+//#endif
+//
+//#ifdef Screen_AP_UPDATE
+//Mcu_Rec_Date();
+//#endif
+////增加屏控接收数据
+//
+//       
+//#ifdef  LCD_Driver
+//keyboard_screen_process();
+//#endif
+//
+//
 
 #ifdef OS_DETECTION_ENABLE
     os_detection_task();

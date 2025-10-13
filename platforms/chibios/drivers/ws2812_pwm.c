@@ -69,7 +69,7 @@
 
 #ifndef WS2812_PWM_TARGET_PERIOD
 //#    define WS2812_PWM_TARGET_PERIOD 800000 // Original code is 800k...?
-#    define WS2812_PWM_TARGET_PERIOD 80000 // TODO: work out why 10x less on f303/f4x1
+#    define WS2812_PWM_TARGET_PERIOD 800000 // TODO: work out why 10x less on f303/f4x1
 #endif
 
 /* --- PRIVATE CONSTANTS ---------------------------------------------------- */
@@ -101,7 +101,7 @@
  *
  * The duty cycle is calculated for a high period of 350 nS.
  */
-#define WS2812_DUTYCYCLE_0 (WS2812_PWM_FREQUENCY / (1000000000 / 350))
+#define WS2812_DUTYCYCLE_0 (WS2812_PWM_FREQUENCY / (1000000000 / 250))
 #if (WS2812_DUTYCYCLE_0 > 255)
 #    error WS2812 PWM driver: High period for a 0 is more than a byte
 #endif
@@ -120,7 +120,7 @@
  * The duty cycle is calculated for a high period of 800 nS.
  * This is in the middle of the specifications of the WS2812 and WS2812B.
  */
-#define WS2812_DUTYCYCLE_1 (WS2812_PWM_FREQUENCY / (1000000000 / 800))
+#define WS2812_DUTYCYCLE_1 (WS2812_PWM_FREQUENCY / (1000000000 / 850))
 #if (WS2812_DUTYCYCLE_1 > 255)
 #    error WS2812 PWM driver: High period for a 1 is more than a byte
 #endif

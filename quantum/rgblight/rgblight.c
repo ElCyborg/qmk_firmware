@@ -24,6 +24,7 @@
 #include "util.h"
 #include "led_tables.h"
 #include <lib/lib8tion/lib8tion.h>
+#include "common.h"
 #ifdef EEPROM_ENABLE
 #    include "eeprom.h"
 #endif
@@ -344,7 +345,8 @@ void rgblight_mode_eeprom_helper(uint8_t mode, bool write_to_eeprom) {
         eeconfig_update_rgblight(rgblight_config.raw);
         dprintf("rgblight mode [EEPROM]: %u\n", rgblight_config.mode);
     } else {
-        dprintf("rgblight mode [NOEEPROM]: %u\n", rgblight_config.mode);
+       //
+     //   dprintf("rgblight mode [NOEEPROM]: %u\n", rgblight_config.mode);
     }
     if (is_static_effect(rgblight_config.mode)) {
         rgblight_timer_disable();
@@ -426,6 +428,8 @@ void rgblight_increase_hue_helper(bool write_to_eeprom) {
     uint8_t hue = rgblight_config.hue + RGBLIGHT_HUE_STEP;
     rgblight_sethsv_eeprom_helper(hue, rgblight_config.sat, rgblight_config.val, write_to_eeprom);
 }
+
+
 void rgblight_increase_hue_noeeprom(void) {
     rgblight_increase_hue_helper(false);
 }
@@ -572,7 +576,7 @@ void rgblight_sethsv_eeprom_helper(uint8_t hue, uint8_t sat, uint8_t val, bool w
                     } else {
                         _hue = hue - _hue;
                     }
-                    dprintf("rgblight rainbow set hsv: %d,%d,%d,%u\n", i, _hue, direction, range);
+                   // dprintf("rgblight rainbow set hsv: %d,%d,%d,%u\n", i, _hue, direction, range);
                     sethsv(_hue, sat, val, (rgb_led_t *)&led[i + rgblight_ranges.effect_start_pos]);
                 }
 #    ifdef RGBLIGHT_LAYERS_RETAIN_VAL
@@ -590,7 +594,7 @@ void rgblight_sethsv_eeprom_helper(uint8_t hue, uint8_t sat, uint8_t val, bool w
             eeconfig_update_rgblight(rgblight_config.raw);
             dprintf("rgblight set hsv [EEPROM]: %u,%u,%u\n", rgblight_config.hue, rgblight_config.sat, rgblight_config.val);
         } else {
-            dprintf("rgblight set hsv [NOEEPROM]: %u,%u,%u\n", rgblight_config.hue, rgblight_config.sat, rgblight_config.val);
+          //  dprintf("rgblight set hsv [NOEEPROM]: %u,%u,%u\n", rgblight_config.hue, rgblight_config.sat, rgblight_config.val);
         }
     }
 }
@@ -613,7 +617,7 @@ void rgblight_set_speed_eeprom_helper(uint8_t speed, bool write_to_eeprom) {
         eeconfig_update_rgblight(rgblight_config.raw);
         dprintf("rgblight set speed [EEPROM]: %u\n", rgblight_config.speed);
     } else {
-        dprintf("rgblight set speed [NOEEPROM]: %u\n", rgblight_config.speed);
+       // dprintf("rgblight set speed [NOEEPROM]: %u\n", rgblight_config.speed);
     }
 }
 
@@ -894,6 +898,8 @@ void rgblight_wakeup(void) {
 
 #endif
 
+/// @brief 
+/// @param  
 void rgblight_set(void) {
     rgb_led_t *start_led;
     uint8_t    num_leds = rgblight_ranges.clipping_num_leds;
@@ -936,7 +942,10 @@ void rgblight_set(void) {
         convert_rgb_to_rgbw(&start_led[i]);
     }
 #endif
-    rgblight_driver.setleds(start_led, num_leds);
+
+   num_leds = num_leds;
+   start_led = start_led;
+   rgblight_driver.setleds(start_led, num_leds);    
 }
 
 #ifdef RGBLIGHT_SPLIT
@@ -1010,7 +1019,7 @@ void rgblight_timer_enable(void) {
 void rgblight_timer_disable(void) {
     rgblight_status.timer_enabled = false;
     RGBLIGHT_SPLIT_SET_CHANGE_TIMER_ENABLE;
-    dprintf("rgblight timer disable.\n");
+    //dprintf("rgblight timer disable.\n");
 }
 void rgblight_timer_toggle(void) {
     dprintf("rgblight timer toggle.\n");
@@ -1037,9 +1046,21 @@ static void rgblight_effect_dummy(animation_status_t *anim) {
             rgblight_status.timer_enabled);
     dprintf("last_timer = %d\n",anim->last_timer);
     **/
+   static uint32_t tt = 0;
+   // store time of last refresh
+   if(timer_elapsed32(tt) >  100)
+   {
+     rgblight_set();
+     tt = timer_read32();
+   }
+  
 }
 
-void rgblight_timer_task(void) {
+void rgblight_timer_task(void) 
+{
+    if (rgblight_status.base_mode == RGBLIGHT_MODE_STATIC_LIGHT) { // dummy
+           rgblight_effect_dummy(&animation_status);
+        }
     if (rgblight_status.timer_enabled) {
         effect_func_t effect_func   = rgblight_effect_dummy;
         uint16_t      interval_time = 2000; // dummy interval
@@ -1047,22 +1068,47 @@ void rgblight_timer_task(void) {
         animation_status.delta      = delta;
 
         // static light mode, do nothing here
-        if (1 == 0) { // dummy
-        }
+
 #    ifdef RGBLIGHT_EFFECT_BREATHING
-        else if (rgblight_status.base_mode == RGBLIGHT_MODE_BREATHING) {
+         if (rgblight_status.base_mode == RGBLIGHT_MODE_BREATHING) {
             // breathing mode
             interval_time = get_interval_time(&RGBLED_BREATHING_INTERVALS[delta], 1, 100);
             effect_func   = rgblight_effect_breathing;
         }
 #    endif
 #    ifdef RGBLIGHT_EFFECT_RAINBOW_MOOD
-        else if (rgblight_status.base_mode == RGBLIGHT_MODE_RAINBOW_MOOD) {
+
+ #ifdef Effect_MK637
+         if (rgblight_status.base_mode == RGBLIGHT_MODE_RAINBOW_MOOD) {
             // rainbow mood mode
             interval_time = get_interval_time(&RGBLED_RAINBOW_MOOD_INTERVALS[delta], 5, 100);
             effect_func   = rgblight_effect_rainbow_mood;
         }
+#elif  defined(Effect_MK856)   
+   if (rgblight_status.base_mode == RGBLIGHT_MODE_RAINBOW_MOOD) {
+            // rainbow mood mode
+            interval_time = get_interval_time(&RGBLED_RAINBOW_MOOD_INTERVALS[delta], 5, 100);
+            effect_func   = rgblight_effect_rainbow_mood;
+        }
+#elif  defined(Effect_MK923)   
+   if (rgblight_status.base_mode == RGBLIGHT_MODE_RAINBOW_MOOD) {
+            // rainbow mood mode
+            interval_time = get_interval_time(&RGBLED_RAINBOW_MOOD_INTERVALS[delta], 5, 100);
+            effect_func   = rgblight_effect_rainbow_mood;
+        }
+#else
+         else if (rgblight_status.base_mode == RGBLIGHT_MODE_RAINBOW_MOOD) {
+            // rainbow mood mode
+            interval_time = get_interval_time(&RGBLED_RAINBOW_MOOD_INTERVALS[delta], 5, 100);
+            effect_func   = rgblight_effect_rainbow_mood;
+        }
+#endif
+
+  
+
 #    endif
+
+
 #    ifdef RGBLIGHT_EFFECT_RAINBOW_SWIRL
         else if (rgblight_status.base_mode == RGBLIGHT_MODE_RAINBOW_SWIRL) {
             // rainbow swirl mode
