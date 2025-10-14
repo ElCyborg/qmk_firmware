@@ -33,3 +33,8 @@
 
 #undef STM32_PWM_USE_TIM4
 #define STM32_PWM_USE_TIM4              TRUE
+
+// Overrides from repo supplied by vendor, redefine here instead of touching core mcuconf.h
+// TODO: Why these changes in general? 
+#undef STM32_USB_LOW_POWER_ON_SUSPEND
+#define STM32_USB_LOW_POWER_ON_SUSPEND      TRUE
