@@ -5,6 +5,12 @@
 #undef STM32F103xB
 #define STM32F103xE
 
+
+// Overrides from repo supplied by vendor, redefine here instead of touching core mcuconf.h
+// TODO: Why these changes in general?  
+#undef STM32_USB_LOW_POWER_ON_SUSPEND
+#define STM32_USB_LOW_POWER_ON_SUSPEND      TRUE
+
 // Overrides from repo supplied by vendor, redefine here instead of touching core board.h
 // TODO: Why these changes in general?  
 /*
