@@ -967,10 +967,10 @@ void console_task(void) {
 #ifdef RAW_ENABLE
 void raw_hid_send(uint8_t *data, uint8_t length) {
     // TODO: implement variable size packet
-    // if (length != RAW_EPSIZE) {
-    //     return;
-    // }
-    chnWrite(&drivers.raw_driver.driver, data, RAW_EPSIZE);
+    if (length != RAW_EPSIZE) {
+        return;
+    }
+    chnWrite(&drivers.raw_driver.driver, data, length);
 }
 
 __attribute__((weak)) void raw_hid_receive(uint8_t *data, uint8_t length) {
