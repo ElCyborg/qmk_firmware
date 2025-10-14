@@ -32,8 +32,6 @@
 #include "timer.h"
 #include "wait.h"
 #include "version.h" // for QMK_BUILDDATE used in EEPROM magic
-#include "print.h"
-#include "common.h"
 
 #if defined(AUDIO_ENABLE)
 #    include "audio.h"
@@ -277,8 +275,6 @@ __attribute__((weak)) void via_custom_value_command(uint8_t *data, uint8_t lengt
 __attribute__((weak)) bool via_command_kb(uint8_t *data, uint8_t length) {
     return false;
 }
-
-
 
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     uint8_t *command_id   = &(data[0]);
@@ -600,13 +596,7 @@ void via_qmk_rgblight_get_value(uint8_t *data) {
         }
     }
 }
-#ifdef Right_Switch_bk100
-extern uint8_t Plug_In_Flag;
-#endif
 
-#ifdef Right_Switch_MK637
-extern uint8_t Plug_In_Flag;
-#endif
 void via_qmk_rgblight_set_value(uint8_t *data) {
     // data = [ value_id, value_data ]
     uint8_t *value_id   = &(data[0]);
@@ -617,47 +607,12 @@ void via_qmk_rgblight_set_value(uint8_t *data) {
             break;
         }
         case id_qmk_rgblight_effect: {
-
-
-
-
-
-
-
-#ifdef Right_Switch_bk100
-           if(!Plug_In_Flag)//充电不可以调灯效
-           {
-                if (value_data[0] == 0) {
-                    rgblight_disable_noeeprom();
-                } else {
-                    rgblight_enable_noeeprom();
-                    rgblight_mode_noeeprom(value_data[0]);
-                    uprintf("problem2\r\n");
-                }
-           }
-
-#elif defined(Right_Switch_MK637)
-           if(!Plug_In_Flag)//充电不可以调灯效
-           {
-                if (value_data[0] == 0) {
-                    rgblight_disable_noeeprom();
-                } else {
-                    rgblight_enable_noeeprom();
-                    rgblight_mode_noeeprom(value_data[0]);
-                    uprintf("problem2\r\n");
-                }
-           }
-
-#else
             if (value_data[0] == 0) {
                 rgblight_disable_noeeprom();
             } else {
-                  uprintf("problem3333\r\n");
-                  rgblight_enable_noeeprom();
-                  rgblight_mode_noeeprom(value_data[0]);
+                rgblight_enable_noeeprom();
+                rgblight_mode_noeeprom(value_data[0]);
             }
-#endif
-          
             break;
         }
         case id_qmk_rgblight_effect_speed: {

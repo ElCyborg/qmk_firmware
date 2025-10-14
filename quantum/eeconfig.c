@@ -4,8 +4,6 @@
 #include "eeprom.h"
 #include "eeconfig.h"
 #include "action_layer.h"
-#include "common.h"
-#include "smart_ble.h"
 
 #if defined(EEPROM_DRIVER)
 #    include "eeprom_driver.h"
@@ -20,9 +18,7 @@ bool via_eeprom_is_valid(void);
 void via_eeprom_set_valid(bool valid);
 void eeconfig_init_via(void);
 #endif
-uint32_t last_ble_mode = 1;
-uint32_t last_ble24G_period = 0;
-uint8_t test_variable = 0;
+
 /** \brief eeconfig enable
  *
  * FIXME: needs doc
@@ -36,59 +32,8 @@ __attribute__((weak)) void eeconfig_init_user(void) {
 
 __attribute__((weak)) void eeconfig_init_kb(void) {
 #if (EECONFIG_KB_DATA_SIZE) == 0
-    // // Reset Keyboard EEPROM value to blank, rather than to a set value
-    // eeconfig_update_kb(0);
-
-    // test_variable = 10;
-
-
-#endif
-
-#ifdef MK637_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    // variable_data.eeconfig_encode_toggle =0;
-    eeconfig_update_kb_datablock(&variable_data);
-#endif
-
-
-#ifdef MK856_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    variable_data.eeconfig_encode_toggle =0;
-    variable_data.eeconfig_shut_up_Flag =0;
-    variable_data.eeconfig_shut_up_screen_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data);
-#endif
-
-#ifdef MK923_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    variable_data.eeconfig_encode_toggle =0;
-    variable_data.eeconfig_shut_up_Flag =0;
-    variable_data.eeconfig_shut_up_screen_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data);
-#endif
-
-
-#ifdef K7214b_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_ble24G_pair_flag  = last_ble24G_period;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    variable_data.eeconfig_shut_up_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data);
-#endif
-
-#ifdef BK100_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    variable_data.eeconfig_shut_up_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data);
+    // Reset Keyboard EEPROM value to blank, rather than to a set value
+    eeconfig_update_kb(0);
 #endif
 
     eeconfig_init_user();
@@ -97,55 +42,10 @@ __attribute__((weak)) void eeconfig_init_kb(void) {
 /*
  * FIXME: needs doc
  */
-
 void eeconfig_init_quantum(void) {
-
-
-       //防止复位后模式通道记不住，清空之前先读出来
-
-#ifdef MK637_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-    }
-#endif
-
-#ifdef MK856_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-    }
-#endif
-
-#ifdef MK923_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-    }
-#endif
-
-
-#ifdef BK100_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-    }
-#endif
-
-#ifdef K7214b_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-        last_ble24G_period =  variable_data.eeconfig_ble24G_pair_flag;
-    }
-#endif
-
-
 #if defined(EEPROM_DRIVER)
     eeprom_driver_erase();
 #endif
-
-
 
     eeprom_update_word(EECONFIG_MAGIC, EECONFIG_MAGIC_NUMBER);
     eeprom_update_byte(EECONFIG_DEBUG, 0);
