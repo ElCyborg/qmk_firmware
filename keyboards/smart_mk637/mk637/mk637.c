@@ -228,6 +228,32 @@ const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
 
 #endif
 
+/**
+ * Taken from QMK Discord #help channel, convo between Gray and sigprof, msg date 2025/02/24
+ * 
+ * By using standard implementations, replugging this keyboard will cause a cycle between firmware->bootloader->firmware->bootloader...... 
+ * (this also happens when using the mode switch between bt<->usb<->wifi, it would require a double switch either direction to get into the firmware correctly)
+ * I assume this is due to the batteries always supplying power to the MCU, if these were not there then after a period the keyboard would always enter firmware first.
+ * I tested this earlier, kinda forgot the results, but the below works. w/e
+ * 
+ * The firmware gotten from the vendor had directly edited STM32F103 board.c and stm32duino.c to change the default behavior to prevent the firmware->bootloader cycle.
+ * 
+ * Worst case, the stm32duino Maple 003 bootloader supplied from the vendor, and PCB wiring, has ESC as the direct switch pin to boot into the bootloader.  
+ */
+
+void board_init(void) {
+    // Disable the QMK default behavior to enter the bootloader after any kind of reset.
+    BKP->DR10 = RTC_BOOTLOADER_JUST_UPLOADED;
+}
+
+//Used by bootmagic and QK_BOOT. 
+void bootloader_jump(void) {
+    // Enter the bootloader after reset.
+    BKP->DR10 = RTC_BOOTLOADER_FLAG;
+    NVIC_SystemReset();
+}
+
+
 /*全键无冲切换*/
 void key_nkro_toggle(void) {
     //全键无冲带记忆
@@ -238,6 +264,7 @@ void key_nkro_toggle(void) {
         eeconfig_update_kb_datablock(&variable_data);
     }
 }
+
 
 //插入检测  
 bool get_plug_mode(void) 
