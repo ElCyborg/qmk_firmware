@@ -148,7 +148,10 @@ extern rgb_led_t leds[6];
 #define LOOP_10HZ_PERIOD    100
 deferred_token loop10hz_token  = INVALID_DEFERRED_TOKEN;
 uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg);
-
+// Below are used for eeconfig setup
+uint32_t last_ble_mode = 1;
+uint32_t last_ble24G_period = 0;
+uint8_t test_variable = 0;
 
 
 
@@ -251,6 +254,107 @@ void bootloader_jump(void) {
     // Enter the bootloader after reset.
     BKP->DR10 = RTC_BOOTLOADER_FLAG;
     NVIC_SystemReset();
+}
+
+void eeconfig_init_kb(void) {
+   
+
+       //防止复位后模式通道记不住，清空之前先读出来
+
+#ifdef MK637_Flash_Store
+        eeconfig_read_kb_datablock(&variable_data);
+    if (variable_data.eeconfig_last_wireless_mode != 0) {
+        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
+    }
+#endif
+
+#ifdef MK856_Flash_Store
+        eeconfig_read_kb_datablock(&variable_data);
+    if (variable_data.eeconfig_last_wireless_mode != 0) {
+        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
+    }
+#endif
+
+#ifdef MK923_Flash_Store
+        eeconfig_read_kb_datablock(&variable_data);
+    if (variable_data.eeconfig_last_wireless_mode != 0) {
+        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
+    }
+#endif
+
+
+#ifdef BK100_Flash_Store
+        eeconfig_read_kb_datablock(&variable_data);
+    if (variable_data.eeconfig_last_wireless_mode != 0) {
+        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
+    }
+#endif
+
+#ifdef K7214b_Flash_Store
+        eeconfig_read_kb_datablock(&variable_data);
+    if (variable_data.eeconfig_last_wireless_mode != 0) {
+        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
+        last_ble24G_period =  variable_data.eeconfig_ble24G_pair_flag;
+    }
+#endif 
+    
+   #if (EECONFIG_KB_DATA_SIZE) == 0
+    // // Reset Keyboard EEPROM value to blank, rather than to a set value
+    // eeconfig_update_kb(0);
+
+    // test_variable = 10;
+
+
+#endif
+
+#ifdef MK637_Flash_Store
+    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
+    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
+    variable_data.eeconfig_lock_win_flag =1;
+    // variable_data.eeconfig_encode_toggle =0;
+    eeconfig_update_kb_datablock(&variable_data);
+#endif
+
+
+#ifdef MK856_Flash_Store
+    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
+    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
+    variable_data.eeconfig_lock_win_flag =1;
+    variable_data.eeconfig_encode_toggle =0;
+    variable_data.eeconfig_shut_up_Flag =0;
+    variable_data.eeconfig_shut_up_screen_Flag =0;
+    eeconfig_update_kb_datablock(&variable_data);
+#endif
+
+#ifdef MK923_Flash_Store
+    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
+    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
+    variable_data.eeconfig_lock_win_flag =1;
+    variable_data.eeconfig_encode_toggle =0;
+    variable_data.eeconfig_shut_up_Flag =0;
+    variable_data.eeconfig_shut_up_screen_Flag =0;
+    eeconfig_update_kb_datablock(&variable_data);
+#endif
+
+
+#ifdef K7214b_Flash_Store
+    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
+    variable_data.eeconfig_ble24G_pair_flag  = last_ble24G_period;
+    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
+    variable_data.eeconfig_lock_win_flag =1;
+    variable_data.eeconfig_shut_up_Flag =0;
+    eeconfig_update_kb_datablock(&variable_data);
+#endif
+
+#ifdef BK100_Flash_Store
+    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
+    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
+    variable_data.eeconfig_lock_win_flag =1;
+    variable_data.eeconfig_shut_up_Flag =0;
+    eeconfig_update_kb_datablock(&variable_data);
+#endif
+
+    eeconfig_init_user(); 
 }
 
 
