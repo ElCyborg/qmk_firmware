@@ -30,6 +30,17 @@
 #define WS2812_DMA_STREAM STM32_DMA1_STREAM7
 #define WS2812_DMA_CHANNEL 7
 
+// Changes done to core, moved here
+#define WS2812_TIMING 1645//1645// 1645//1250
+#define WS2812_T1H 870//870//870//660 // Width of a 1 bit in ns
+#define WS2812_T0H 332 // Width of a 0 bit in ns
+#define WS2812_PWM_TARGET_PERIOD 800000
+#undef WS2812_DUTYCYCLE_0
+#define WS2812_DUTYCYCLE_0 (WS2812_PWM_FREQUENCY / (1000000000 / 250))
+#undef WS2812_DUTYCYCLE_1
+#define WS2812_DUTYCYCLE_1 (WS2812_PWM_FREQUENCY / (1000000000 / 850))
+// End changes done to core
+
 
 #define RGB_MATRIX_LED_COUNT 68
 #define DYNAMIC_KEYMAP_LAYER_COUNT 8
