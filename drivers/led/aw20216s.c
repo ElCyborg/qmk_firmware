@@ -18,7 +18,6 @@
 #include "aw20216s.h"
 #include "wait.h"
 #include "spi_master.h"
-#include "common.h"
 
 #define AW20216S_PWM_REGISTER_COUNT 216
 
@@ -31,29 +30,11 @@
 #endif
 
 #ifndef AW20216S_SCALING_MAX
-#if (defined Effect_MK923) || (defined Effect_MK856) 
-#if defined(Effect_MK923)
-#    define AW20216S_SCALING_MAX 210
-#endif
-#if defined(Effect_MK856)
-#    define AW20216S_SCALING_MAX 220
-#endif
-#else
 #    define AW20216S_SCALING_MAX 150
-#endif
 #endif
 
 #ifndef AW20216S_GLOBAL_CURRENT_MAX
-#if (defined Effect_MK923) || (defined Effect_MK856) 
-#if defined(Effect_MK923)
 #    define AW20216S_GLOBAL_CURRENT_MAX 150
-#endif
-#if defined(Effect_MK856)
-#    define AW20216S_GLOBAL_CURRENT_MAX 255
-#endif
-#else
-#    define AW20216S_GLOBAL_CURRENT_MAX 150
-#endif
 #endif
 
 #ifndef AW20216S_SPI_MODE
@@ -176,10 +157,10 @@ void aw20216s_set_color_all(uint8_t red, uint8_t green, uint8_t blue) {
 }
 
 void aw20216s_update_pwm_buffers(pin_t cs_pin, uint8_t index) {
-  //  if (driver_buffers[index].pwm_buffer_dirty) {
+    if (driver_buffers[index].pwm_buffer_dirty) {
         aw20216s_write(cs_pin, AW20216S_PAGE_PWM, 0, driver_buffers[index].pwm_buffer, AW20216S_PWM_REGISTER_COUNT);
         driver_buffers[index].pwm_buffer_dirty = false;
-   // }
+    }
 }
 
 void aw20216s_flush(void) {
