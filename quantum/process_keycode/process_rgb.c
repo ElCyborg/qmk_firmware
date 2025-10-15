@@ -23,23 +23,6 @@
 #    include "rgblight.h"
 #endif
 
-
-#include "quantum.h"
-#include "uart.h"
-#include "smart_ble.h"
-#include "keyboard.h"
-
-#include "print.h"
-#include "usb_main.h"
-#include "usb_util.h"
-#include "usb_driver.h"
-#include "adc.h"
-#include "common.h"
-#include "os_detection.h"
-#include "raw_hid.h"
-#include "process_rgb.h"
-#include "action_util.h"
-
 typedef void (*rgb_func_pointer)(void);
 
 /**
@@ -75,16 +58,6 @@ static void __attribute__((noinline, unused)) handleKeycodeRGBMode(const uint8_t
 /**
  * Handle keycodes for both rgblight and rgbmatrix
  */
- extern uint8_t Test_Battery_Mode;
-#ifdef Right_Switch_MK637
- extern uint8_t chag_via_flag;
- #endif
- #ifdef Right_Switch_MK856
- extern uint8_t chag_via_flag;
- #endif
-  #ifdef Right_Switch_MK923
- extern uint8_t chag_via_flag;
- #endif
 bool process_rgb(const uint16_t keycode, const keyrecord_t *record) {
     // need to trigger on key-up for edge-case issue
 #ifndef RGB_TRIGGER_ON_KEYDOWN
@@ -96,135 +69,12 @@ bool process_rgb(const uint16_t keycode, const keyrecord_t *record) {
         uint8_t shifted = get_mods() & MOD_MASK_SHIFT;
 #endif
         switch (keycode) {
-
- #ifdef Right_Switch_MK637   
-                 case KC_MODEPLUS:
-                 if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_step, rgblight_step_reverse);
-                uprintf("enter here\r\n");
-                return false;
-                case KC_HUEPLS:
-                if(!chag_via_flag)
-                    handleKeycodeRGB(shifted, rgblight_increase_hue, rgblight_decrease_hue);
-                return false;
-
-                case KC_VAL_UP:
-                if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_increase_val, rgblight_decrease_val);
-                return false;
-
-                case KC_VAL_DN:
-                if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_decrease_val, rgblight_increase_val);
-                return false;
-                //  case KC_SPD_UP:
-                //  handleKeycodeRGB(shifted, rgblight_increase_speed, rgblight_decrease_speed);
-                // return false;
-
-                // case KC_SPD_DN:
-                //   handleKeycodeRGB(shifted, rgblight_decrease_speed, rgblight_increase_speed);
-#endif    
-
-
- #ifdef Right_Switch_MK856   
-                 case KC_MODEPLUS:
-                 if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_step, rgblight_step_reverse);
-                uprintf("enter here\r\n");
-                return false;
-                case KC_HUEPLS:
-                if(!chag_via_flag)
-                    handleKeycodeRGB(shifted, rgblight_increase_hue, rgblight_decrease_hue);
-                return false;
-
-                case KC_VAL_UP:
-                if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_increase_val, rgblight_decrease_val);
-                return false;
-
-                case KC_VAL_DN:
-                if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_decrease_val, rgblight_increase_val);
-                return false;
-                //  case KC_SPD_UP:
-                //  handleKeycodeRGB(shifted, rgblight_increase_speed, rgblight_decrease_speed);
-                // return false;
-
-                // case KC_SPD_DN:
-                //   handleKeycodeRGB(shifted, rgblight_decrease_speed, rgblight_increase_speed);
-#endif   
-
- #ifdef Right_Switch_MK923 
-                 case KC_MODEPLUS:
-                 if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_step, rgblight_step_reverse);
-                uprintf("enter here\r\n");
-                return false;
-                case KC_HUEPLS:
-                if(!chag_via_flag)
-                    handleKeycodeRGB(shifted, rgblight_increase_hue, rgblight_decrease_hue);
-                return false;
-
-                case KC_VAL_UP:
-                if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_increase_val, rgblight_decrease_val);
-                return false;
-
-                case KC_VAL_DN:
-                if(!chag_via_flag)
-                handleKeycodeRGB(shifted, rgblight_decrease_val, rgblight_increase_val);
-                return false;
-                 case KC_SPD_UP:
-                 handleKeycodeRGB(shifted, rgblight_increase_speed, rgblight_decrease_speed);
-                return false;
-
-                case KC_SPD_DN:
-                  handleKeycodeRGB(shifted, rgblight_decrease_speed, rgblight_increase_speed);
-                return false;
-#endif   
-
- #ifdef Right_Switch_bk100
-
-            case KC_MODEPLUS:
-             if(!Test_Battery_Mode)
-            handleKeycodeRGB(shifted, rgblight_step, rgblight_step_reverse);
-            uprintf("enter here\r\n");
-            return false;
-            case KC_HUEPLS:
-             if(!Test_Battery_Mode)
-                handleKeycodeRGB(shifted, rgblight_increase_hue, rgblight_decrease_hue);
-            return false;
-//
-            case KC_VAL_UP:
-              if(!Test_Battery_Mode)
-               handleKeycodeRGB(shifted, rgblight_increase_val, rgblight_decrease_val);
-            return false;
-
-            case KC_VAL_DN:
-               if(!Test_Battery_Mode)
-               handleKeycodeRGB(shifted, rgblight_decrease_val, rgblight_increase_val);
-            return false;
-#endif    
-
             case RGB_TOG:
 #if defined(RGBLIGHT_ENABLE) && !defined(RGBLIGHT_DISABLE_KEYCODES)
                 rgblight_toggle();
 #endif
 #if defined(RGB_MATRIX_ENABLE) && !defined(RGB_MATRIX_DISABLE_KEYCODES)
-                //rgb_matrix_toggle();
-                #ifdef Effect_MK923
-                 shut_up_Flag = ! shut_up_Flag;
-                 #elif defined Effect_MK856
-                shut_up_Flag = ! shut_up_Flag;  
-                #else
-                shut_up_Flag = ~ shut_up_Flag;  
-                #endif
-#if !defined(MK637_Flash_Store)  
-                 variable_data.eeconfig_shut_up_Flag = shut_up_Flag;
-                 eeconfig_update_kb_datablock(&variable_data);
-#endif
-
-                
+                rgb_matrix_toggle();
 #endif
                 return false;
             case RGB_MODE_FORWARD:
@@ -277,7 +127,6 @@ bool process_rgb(const uint16_t keycode, const keyrecord_t *record) {
                 return false;
             case RGB_VAI:
 #if defined(RGBLIGHT_ENABLE) && !defined(RGBLIGHT_DISABLE_KEYCODES)
-asdsad
                 handleKeycodeRGB(shifted, rgblight_increase_val, rgblight_decrease_val);
 #endif
 #if defined(RGB_MATRIX_ENABLE) && !defined(RGB_MATRIX_DISABLE_KEYCODES)
