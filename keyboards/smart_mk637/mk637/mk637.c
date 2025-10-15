@@ -37,6 +37,7 @@
 #    include "rgblight.h"
 #endif
 
+
 // // /************************默认图层定义************************/
 
 
@@ -1602,6 +1603,38 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record)
                 flag32.reset_flag = 0;
             }
         break;
+
+//#if (defined(RGBLIGHT_ENABLE) && !defined(RGBLIGHT_DISABLE_KEYCODES)) || (defined(RGB_MATRIX_ENABLE) && !defined(RGB_MATRIX_DISABLE_KEYCODES))
+//            uint8_t shifted = get_mods() & MOD_MASK_SHIFT;
+//#endif
+#ifdef Right_Switch_MK637
+        case KC_MODEPLUS:
+            if(!chag_via_flag)
+                rgblight_step_noeeprom();
+//            uprintf("enter here\r\n");
+            break;
+        case KC_HUEPLS:
+            if(!chag_via_flag)
+               rgblight_increase_hue_noeeprom(); 
+            break;
+
+        case KC_VAL_UP:
+            if(!chag_via_flag) {
+                rgblight_increase_val_noeeprom();
+            }
+            break;
+
+        case KC_VAL_DN:
+            if(!chag_via_flag)
+                rgblight_decrease_val_noeeprom();
+             break;
+            //  case KC_SPD_UP:
+            //  handleKeycodeRGB(shifted, rgblight_increase_speed, rgblight_decrease_speed);
+            // return false;
+
+            // case KC_SPD_DN:
+            //   handleKeycodeRGB(shifted, rgblight_decrease_speed, rgblight_increase_speed);
+#endif
         default:
             break;
 
