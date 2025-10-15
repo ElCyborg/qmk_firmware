@@ -42,7 +42,7 @@
 
 // /****************函数声明************************/
 extern matrix_row_t raw_matrix[MATRIX_ROWS]; // raw values
-extern uint32_t exti_flag;
+ uint32_t exti_flag;
 extern uint32_t pr1; 
 extern uint8_t                keyboard_led_state;
 extern uint8_t ble_led_state ;
@@ -155,6 +155,43 @@ uint8_t test_variable = 0;
 
 
 
+/*
+ * Function previously defined in stm32_isr.c
+ * Handles wakeup interrupt and setting `exti_flag` when a wakeup occurs that is not a button press?
+ * TBD
+ */
+OSAL_IRQ_HANDLER(VectorE4) {
+
+    OSAL_IRQ_PROLOGUE();
+
+
+    if( RTC->CRL & RTC_CRL_ALRF )
+    {
+
+        RTC->CRL &= ~RTC_CRL_ALRF;
+        EXTI->PR = 1<< 17;
+        RTC->CRL |= RTC_CRL_CNF;  
+        while(!(RTC->CRL & RTC_CRL_RTOFF));
+  
+
+        RCC->APB1ENR |= RCC_APB1ENR_BKPEN; 
+        RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+        PWR->CR |= PWR_CR_DBP;
+
+        RTC->CRL |= RTC_CRL_CNF;       //Configuration Flag  
+        RTC->CNTL = 0x00;   //时间时15s
+        RTC->CRL &= ~RTC_CRL_CNF; 
+        while(!(RTC->CRL & RTC_CRL_RTOFF));  //RTC operation OFF 
+
+
+        RTC->CRL &= ~RTC_CRL_CNF; 
+    }
+  
+  
+    exti_flag = 1;
+    matrix_init();
+    OSAL_IRQ_EPILOGUE();
+}
 
 #ifdef RGBLIGHT_ENABLE
 const rgblight_segment_t PROGMEM _SecondOff_layer[] = RGBLIGHT_LAYER_SEGMENTS(
