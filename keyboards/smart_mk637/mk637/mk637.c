@@ -1013,6 +1013,20 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
             {
                 rgb_matrix_set_color(34,255,255,255);
             }
+            
+            #ifdef Effect_MK637
+
+
+
+   // use MATRIX LEDS  as RGBLIGHT LEDS ..JackyJia
+        extern rgb_led_t led[RGBLIGHT_LED_COUNT];
+        for (uint8_t i=0;i<2;i++)  //3,4
+        { 
+            rgb_matrix_set_color(3+i, led[i].r,led[i].g,led[i].b);
+        }
+   
+
+#endif
 
             // //旋钮的优先级低于模式
             // if(!BT_24G_Shine)
