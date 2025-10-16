@@ -563,6 +563,7 @@ void keyboard_post_init_kb(void)
     // debug_matrix=true;
     // debug_mouse=true;
     rgblight_layers = my_rgb_layers;
+    ws2812_init();
     // setPinOutput(ARGB_LEFT_EN);
     // writePinHigh(ARGB_LEFT_EN);
     AFIO->MAPR = (AFIO->MAPR & ~AFIO_MAPR_SWJ_CFG_Msk);
@@ -1996,6 +1997,7 @@ void usb_suspend_power_down(void)
     restart_usb_driver(&USB_DRIVER);
     init_usb_driver(&USB_DRIVER); //Should not enter SLEEP when USB mode
     matrix_init();
+    ws2812_init();
     adc_init();
     gpio_init();
     get_mode();
@@ -2124,6 +2126,7 @@ void POWER_EnterSleep_First(void) {
     matrix_init();
     matrix_scan();
     stm32_clock_init();
+    ws2812_init();
     adc_init(); 
     get_mode();
     rgb_wireless_timer = timer_read32();
@@ -2259,6 +2262,7 @@ void POWER_EnterSleep(void) {
     stm32_clock_init();
     init_usb_driver(&USB_DRIVER); //Should not enter SLEEP when USB mode                //Should not enter SLEEP when USB mode
     matrix_init();
+    ws2812_init();
     adc_init(); 
 
 
