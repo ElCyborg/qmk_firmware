@@ -25,7 +25,7 @@
 #include "mk637.h" 
 #include "os_detection.h"
 #include "raw_hid.h"
-#include "process_rgb.h"
+#include "process_rgb_matrix.h"
 #include "action_util.h"
 #include "common.h"
 #include "rtc.h"
@@ -1020,12 +1020,12 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max)
 
 
    // use MATRIX LEDS  as RGBLIGHT LEDS ..JackyJia
-        extern rgb_led_t led[RGBLIGHT_LED_COUNT];
+        extern ws2812_led_t ws2812_leds[WS2812_LED_COUNT];
         for (uint8_t i=0;i<2;i++)  //3,4
         { 
-            rgb_matrix_set_color(3+i, led[i].r,led[i].g,led[i].b);
+            ws2812_set_color(3+i, ws2812_leds[i].r,ws2812_leds[i].g,ws2812_leds[i].b);
         }
-   
+//        ws2812_flush();
 
 #endif
 
@@ -1726,7 +1726,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
                                     // if(BT_Switch_Flag)
                                     // rgb_matrix_set_color(52,0,255,0); //蓝牙回连绿色，配对蓝色
                                     // else
-                                    // rgb_matrix_set_color(52,0,0,255);
+                                     rgb_matrix_set_color(52,0,0,255);
                                
                                     rgblight_set_layer_state(3,true);
                                     rgblight_set_layer_state(6,false);
@@ -1735,7 +1735,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
                                 {     
                                      rgblight_set_layer_state(6,true);
                                      rgblight_set_layer_state(3,false);
-                                    //rgb_matrix_set_color(52,0,0,0);
+                                    rgb_matrix_set_color(52,0,0,0);
                                 }
                             break;
 
