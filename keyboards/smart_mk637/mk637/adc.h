@@ -1,5 +1,6 @@
 #pragma once
 
+#include "analog.h"
 
 //测量电量的参数
 #define BATT_OFF 3000

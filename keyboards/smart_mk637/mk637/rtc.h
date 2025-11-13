@@ -1,5 +1,6 @@
 
 #pragma once
+#include <stdint.h>
 void exti_init_start(void);
 void rcu_backup_clock_Enable(void);
 void rcu_power_clock_Enable(void);

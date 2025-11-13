@@ -300,21 +300,21 @@ void eeconfig_init_kb(void) {
        //防止复位后模式通道记不住，清空之前先读出来
 
 #ifdef MK637_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
+        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
     if (variable_data.eeconfig_last_wireless_mode != 0) {
         last_ble_mode = variable_data.eeconfig_last_wireless_mode;
     }
 #endif
 
 #ifdef MK856_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
+        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
     if (variable_data.eeconfig_last_wireless_mode != 0) {
         last_ble_mode = variable_data.eeconfig_last_wireless_mode;
     }
 #endif
 
 #ifdef MK923_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
+        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
     if (variable_data.eeconfig_last_wireless_mode != 0) {
         last_ble_mode = variable_data.eeconfig_last_wireless_mode;
     }
@@ -322,14 +322,14 @@ void eeconfig_init_kb(void) {
 
 
 #ifdef BK100_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
+        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
     if (variable_data.eeconfig_last_wireless_mode != 0) {
         last_ble_mode = variable_data.eeconfig_last_wireless_mode;
     }
 #endif
 
 #ifdef K7214b_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data);
+        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
     if (variable_data.eeconfig_last_wireless_mode != 0) {
         last_ble_mode = variable_data.eeconfig_last_wireless_mode;
         last_ble24G_period =  variable_data.eeconfig_ble24G_pair_flag;
@@ -350,7 +350,7 @@ void eeconfig_init_kb(void) {
     variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
     variable_data.eeconfig_lock_win_flag =1;
     // variable_data.eeconfig_encode_toggle =0;
-    eeconfig_update_kb_datablock(&variable_data);
+    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
 #endif
 
 
@@ -361,7 +361,7 @@ void eeconfig_init_kb(void) {
     variable_data.eeconfig_encode_toggle =0;
     variable_data.eeconfig_shut_up_Flag =0;
     variable_data.eeconfig_shut_up_screen_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data);
+    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
 #endif
 
 #ifdef MK923_Flash_Store
@@ -371,7 +371,7 @@ void eeconfig_init_kb(void) {
     variable_data.eeconfig_encode_toggle =0;
     variable_data.eeconfig_shut_up_Flag =0;
     variable_data.eeconfig_shut_up_screen_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data);
+    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
 #endif
 
 
@@ -381,7 +381,7 @@ void eeconfig_init_kb(void) {
     variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
     variable_data.eeconfig_lock_win_flag =1;
     variable_data.eeconfig_shut_up_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data);
+    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
 #endif
 
 #ifdef BK100_Flash_Store
@@ -389,7 +389,7 @@ void eeconfig_init_kb(void) {
     variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
     variable_data.eeconfig_lock_win_flag =1;
     variable_data.eeconfig_shut_up_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data);
+    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
 #endif
 
     eeconfig_init_user(); 
@@ -403,7 +403,7 @@ void key_nkro_toggle(void) {
         nkro_flag = keymap_config.nkro;
         // dynamic_keymap_set_keycode(1, 1, 0, nkro_flag);
         variable_data.eeconfig_nkro_flag = keymap_config.nkro;
-        eeconfig_update_kb_datablock(&variable_data);
+        eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
     }
 }
 
@@ -571,12 +571,12 @@ void keyboard_post_init_kb(void)
 // //全键无冲带记忆
     // nkro_flag       = dynamic_keymap_get_keycode(1, 1, 0);
     // keymap_config.nkro = nkro_flag;
-     eeconfig_read_kb_datablock(&variable_data);    //读出数据  
+     eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);    //读出数据  
     keymap_config.nkro  = variable_data.eeconfig_nkro_flag; /*是否开启全全键无冲*/
     // lock_win_flag = variable_data.eeconfig_lock_win_flag;
     // encode_toggle = variable_data.eeconfig_encode_toggle;
     last_wireless_mode  = variable_data.eeconfig_last_wireless_mode;
-    eeconfig_update_keymap(keymap_config.raw);
+    eeconfig_update_keymap(&keymap_config);
 
     // //虚拟按键
     // encode_toggle = dynamic_keymap_get_keycode(0, 4, 9);
@@ -1585,7 +1585,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record)
         lock_win_flag = !lock_win_flag;
       //  dynamic_keymap_set_keycode(1, 2, 0,lock_win_flag);
         variable_data.eeconfig_lock_win_flag = lock_win_flag;
-        eeconfig_update_kb_datablock(&variable_data);
+        eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
 
     }
 
