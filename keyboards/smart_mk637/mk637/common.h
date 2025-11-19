@@ -24,22 +24,22 @@
 //引脚配置
 //usb相关引脚
 #define PLUG_IN 		    B9     //插入检测
-#define BT_TOG_PIN          B1
-#define RENUM   A8         
+#define BT_TOG_PIN          B1 //?????
+#define RENUM_PIN   A8         
 
 //灯控引脚
 // #define ARGB_LEFT_EN  B4
- #define ARGB_LEFT_EN  A5
+ #define EN_BACKLIT  A5
 //晶振引脚
 #define OSC_IN D0
 #define OSC_OUT D1
 
 //模式
 
-#define BLE C15
+#define BT_MODE C15
 // #define BLE2 A13
 // #define BLE3 A6
-#define TwoMode C14
+#define PRF_MODE C14
 
 //系统切换
 // #define SYS_SW A7
@@ -73,11 +73,12 @@ enum custom_keycodes {
   KC_BAT,
   KC_RESET,
   KC_WIN,
+  KC_MAC,
   KC_WINMODE,
   KC_MACMODE,
   KC_SHUTRGB,
   KC_RRWIN,
-  KC_MODEPLUS,
+  KC_MODE,
   KC_Mctl,
   KC_Lpad,
   KC_HUEPLS,
@@ -86,7 +87,8 @@ enum custom_keycodes {
   KC_VAL_DN,
   KC_SPD_UP,
   KC_SPD_DN,
-  KC_LOCK
+  KC_LOCK,
+  KC_WHITE  
 
 
 };

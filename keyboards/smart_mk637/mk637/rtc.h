@@ -18,4 +18,4 @@ void rtc_ainterrupt_enable(void);
 void rtc_prescaler_set(void);
 void config_time_alarm(void);
 void exti_stop_config(void);
-// uint8_t Rtc_Config_Api(void);
+uint8_t Rtc_Config_Api(void);

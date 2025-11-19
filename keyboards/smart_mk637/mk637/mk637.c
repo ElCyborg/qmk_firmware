@@ -29,6 +29,7 @@
 #include "action_util.h"
 #include "common.h"
 #include "rtc.h"
+#include "battery.h"
 
 #ifdef RGB_MATRIX_ENABLE
 #    include "rgb_matrix.h"
@@ -43,117 +44,93 @@
 
 // /****************函数声明************************/
 extern matrix_row_t raw_matrix[MATRIX_ROWS]; // raw values
- uint32_t exti_flag;
-extern uint32_t pr1; 
-extern uint8_t                keyboard_led_state;
-extern uint8_t ble_led_state ;
-extern uint32_t send_packetimer;
-extern uint8_t packet_send;
-uint8_t temp_test_cout;
-extern uint32_t test_isrsource;
-extern uint8_t test_variable;
+/*loop_10Hz函数的定义*/
+#define LOOP_10HZ_PERIOD 100
+deferred_token loop10hz_token = INVALID_DEFERRED_TOKEN;
+uint32_t       loop_10Hz(uint32_t trigger_time, void *cb_arg);
+/***********************切换通讯模式***************************/
+enum kb_mode_t new_mode;
+enum kb_mode_t new_kb_mode;
+/***********************外部变量和一些枚举变量***************************/
+extern enum kb_mode_t kb_mode;
+extern bool           wireless_connected;           /*连接标志位*/
+extern bool           suspend;                      /*2.4G休眠标志位*/
+extern bool           first_sleep_flag;             /*进入一级休眠标志位*/
+bool           interrupt_source_flag;        /*按键中断来源标志位*/
+ bool           rgb_matrix_off_flag;          /*关闭矩阵灯标志位*/
+ bool           rgblight_off_flag;
+ bool           keyboard_no_idle_flag;        /*按键休眠不分连接以解决切模式异常*/
+extern uint8_t       last_wireless_mode;           /*用来记忆之前的无线模式*/
+extern uint32_t       wireless_no_operation_time;   /*无线模式无操作计时*/
+extern uint32_t       first_sleep_time;             /*发送心跳包计时*/
+extern uint32_t       packet_send_time;             /*发送心跳包次数*/
+extern uint32_t       keyboard_idle_time;           /*按键空闲计时*/
+/*battery.h*/
+extern enum batt_charge_status_t batt_charge_status;
+extern bool                      battery_first_test_flag;   /*一旦重新上电就会重新检测一次adc的标志位*/
+extern bool                      ble_connect_flag;          /*蓝牙连接标志位*/
+extern bool                      battery_level_report_flag; /*电池待更新标志*/
+extern uint8_t                   battery_level;             /*电池电量百分比*/
+extern uint8_t                   temp;                      /*电量百分比*/
+extern uint8_t                   last_temp;                 /*记忆上次电量百分比*/
+bool                             batt_is_charging_flag;
+uint32_t                         batt_is_charging_time;
+/*蓝牙连接标志位*/
+bool     ble_connect_flag  = false;
 /****************变量定义************************/
-//闪烁计时
-static uint8_t blink_period = 5;
-static uint8_t blink_counter  = 0;
-static uint8_t wakeup_pack24G  = 0;
-static uint8_t lowpower_flag                    = 1; 
-static uint8_t power_period   = 2;
-static uint8_t power_counter  = 0;
-uint8_t shut_up_Flag = 0 ;
-static uint8_t ble24G_period   = 5;
-static uint8_t BT_24G_Shine;
-static uint8_t  ble_mode; 
-static uint8_t  reset_flag; 
-static uint8_t  current_layer; 
-// bool     sleep_24G_flag = false; // 2.4G进入休眠标志位
-
-bool     usb_wakeup_flag;
-// static uint8_t old_effect;
-// static uint8_t Default_Effect_Flag;
-// static uint8_t  encode_toggle = 0;
-// static uint8_t  encode_toggle_flag = 0;
-// static uint8_t  encode_Press_flag = 0;
-
-uint8_t  lock_keyboard = 0;
-// static uint32_t encode_toggle_timer          = 0;    //旋钮计时
-static uint32_t Doubele_Fn_timer          = 0;    //fn计时
-static uint32_t First_timer          = 0;    //fn计时
-// static uint32_t Power_Full_timer          = 0;    //fn计时
-static uint32_t Media_timer          = 0;    //fn计时
-uint8_t        sleep_shutled_flag       = 0;
-// uint8_t  Power_Full_Flag = 0;
-uint8_t  FN_Count = 0;
-uint8_t  test_number = 0;
-uint8_t  Media_Flag = 0;
- uint8_t Plug_In_Flag;
-uint8_t lowpower_effect;
-uint8_t chag_via_flag;
-uint8_t chag_first_flag;
-// static uint8_t Double_Fn_Flag = 0;
-uint8_t lock_win_flag = 1;  
-static uint8_t Valorspd_counter  = 0;
-static uint8_t Valorspd_period   = 3;
-static uint8_t blink_num                    = 0;  
-//电池待更新标志
-static uint8_t battery_Flag = 0;
-//按键休眠 不分连接以解决切模式异常
- uint8_t keyboard_Idle = 0;
-static uint8_t ble24G_counter  = 0;
-static uint8_t temp;
-static uint8_t last_temp = 0 ;
-static uint8_t second_temp = 0 ;
- uint16_t sleep_switch_driverflag = 0 ;
-//充电灯闪烁
-/*切换全键无冲变量*/
-//static uint8_t BT_Switch_Flag = 1;
-uint8_t isr_Trig;
-uint8_t nkro_flag = 1;
-uint8_t default_layer  = 1;   
-extern uint32_t rgb_wireless_timer;
-extern uint32_t first_sleep_timer;
- static uint8_t Test_Battery_value;
-static uint8_t connect_buff = 0;
-bool ble_flag = 0;
-static uint32_t ble_bat_timer;
-uint8_t Light_Count;
-static uint32_t long_ble_24g_timer          = 0;    //蓝牙2.4g长按计时
-static uint32_t blink_ble_24g_timer         = 0;    //蓝牙2.4闪烁计时
-uint32_t keyborad_Idtimer         = 0;    //按键空闲计时
-uint32_t keyborad_Chrgtimer         = 0;    //充电计时
-uint32_t encoder_longpresstimer         = 0;    //充电计时
-uint32_t test_twoled         = 0;    //按键空闲计时
-static uint32_t pair_timeout                = 20000;//20000;    //配对超时时间
-static uint32_t pair_succeed_timer          = 0;    //按键无线配对成功灯长亮时间
-static uint32_t long_press_reset_timer      = 0;    //记录长按复位键的时
-static uint8_t release_count = 0;           //usb休眠唤醒添加释放包，防止hold键
-static uint32_t usb_suspend_time;   
-// static uint8_t WinLayer_Flag;  
-// static uint8_t MacLayer_Flag;  
-static uint32_t usb_suspend_time;  
-uint8_t test_count  = 0;
-/****************标志变量************************/
-kb_flag32_t	flag32 = {0}; 
-uint8_t usb_suspend_flag = 2;             //usb检测到suspend标志位
-//adc检测变量
-static uint16_t adc_value = 0;
-static uint16_t adc_vref = 0;
-uint16_t battery_value = 0;//20240317
-bool bat_test_flag = false;
-static  uint32_t battery_test_time;
-extern bool suspend;
-extern bool wireless_connected;
-extern uint8_t last_wireless_mode;
- enum kb_mode_t kb_mode= KB_MODE_DEFALT;//每次上电都可以进入下面的上电执行一次的地
-extern rgb_led_t leds[6];
-#define LOOP_10HZ_PERIOD    100
-deferred_token loop10hz_token  = INVALID_DEFERRED_TOKEN;
-uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg);
-// Below are used for eeconfig setup
-uint32_t last_ble_mode = 1;
-uint32_t last_ble24G_period = 0;
-uint8_t test_variable = 0;
-
+uint8_t blink_count        = 0;
+uint8_t blink_period       = 5;
+uint8_t blink_rgb_count    = 0;
+uint8_t blink_rgb_period   = 2;
+uint8_t blink_reset_count  = 0;
+uint8_t blink_reset_period = 5;
+/***********************模式指示灯***************************/
+#define  LONG_PRESS_TIME    3000        // 3000ms
+bool     wireless_connect_flag = false; //无线连接标志位
+bool     long_press_ble_flag   = false; //长按蓝牙通道标志位
+bool     long_press_24G_flag   = false; //长按2.4G通道标志位
+uint32_t long_press_ble_time;           //蓝牙通道键按下计时变量
+uint32_t long_press_24G_time;           // 2.4G通道键按下计时变量
+uint32_t blink_wireless_time;           //正常闪烁计时
+uint32_t higher_blink_wireless_time;    //快闪计时
+uint32_t ble_connect_time;
+uint32_t prf_connect_time;
+/***********************自定义功能键的变量***************************/
+/*复位*/
+uint32_t long_press_reset_time; //按下复位键开始计时变量
+uint8_t  blink_reset_time;
+uint8_t  mcu_reset_flag;
+bool     reset_flag        = false; //恢复出厂标志位
+bool     higher_blink_flag = false;
+/*锁win*/
+bool win_lock_flag        = false;
+bool memory_win_lock_flag = false;
+/*电量查询*/
+bool battery_consult_flag = false;
+/*双击切层*/
+uint8_t     set_layer_count;
+uint32_t    set_layer_time;
+/*白灯灯效*/
+bool        white_rgb_flag = false;
+/***********************休眠***************************/
+// #define     RGB_MATRIX_WIRELESS_TIME    240000  // 原始版本
+// #define     RGB_MATRIX_WIRELESS_TIME    300000  // 5分钟一级休眠版本
+#define     RGB_MATRIX_WIRELESS_TIME    600000  // 10分钟一级休眠版本
+#define     PACKET_SEND_TIME            RGB_MATRIX_WIRELESS_TIME/8000+1
+/*USB跟随休眠*/
+bool     usb_wakeup_send_code_flag;
+uint8_t  release_count    = 0;  // usb休眠唤醒添加释放包，防止hold键
+uint8_t  usb_suspend_flag = 2;  // usb检测到suspend标志位;0：ACTIVE和在USB模式下;1:SUSPEND和在USB模式下;2:不在0,1的情况；
+uint32_t usb_suspend_time;      // usb检测到suspend计时
+uint32_t wakeup_count;
+/*无线模式超时休眠*/
+bool     wakeup_first_sleep_flag      = false;
+uint32_t wakeup_first_sleep_time;
+/*2.4G跟随休眠*/
+bool     sleep_24G_flag = false; /*2.4G进入休眠标志位*/
+/*休眠关灯标志位*/
+bool     enable_rgb_pin_flag  = false;
+uint8_t  rgb_matrix_off_state = 0;
 
 
 /*
@@ -189,85 +166,10 @@ OSAL_IRQ_HANDLER(VectorE4) {
     }
   
   
-    exti_flag = 1;
-    matrix_init();
+    interrupt_source_flag = true;
+//    matrix_init();
     OSAL_IRQ_EPILOGUE();
 }
-
-#ifdef RGBLIGHT_ENABLE
-const rgblight_segment_t PROGMEM _SecondOff_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_WHITE}
-);
-const rgblight_segment_t PROGMEM __SecondOn_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLACK}
-);
-
-const rgblight_segment_t PROGMEM __power1_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_RED}
-);
-
-
-
-const rgblight_segment_t PROGMEM __power4_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLUE}
-);
-const rgblight_segment_t PROGMEM __power2_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_YELLOW}
-);
-const rgblight_segment_t PROGMEM __power3_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_RED}
-);
-const rgblight_segment_t PROGMEM __power5_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLACK}
-);
-
-
-const rgblight_segment_t PROGMEM __power6_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_GREEN}
-);
-const rgblight_segment_t PROGMEM __power7_layer_layer[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLACK}
-);
-
-
-const rgblight_segment_t PROGMEM __power8_layer_layer11[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_GREEN}
-);
-
-
-const rgblight_segment_t PROGMEM __power8_layer_layer12[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_RED}
-);
-
-const rgblight_segment_t PROGMEM __power8_layer_layer13[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_BLACK}
-);
-
-
-const rgblight_segment_t PROGMEM __power8_layer_layer14[] = RGBLIGHT_LAYER_SEGMENTS(
-    {0, 2, HSV_WHITE}
-);
-
-
-
-const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
-     _SecondOff_layer,
-    __SecondOn_layer_layer,
-    __power1_layer_layer,
-
-    __power4_layer_layer,
-    __power2_layer_layer,
-    __power3_layer_layer,
-    __power5_layer_layer,
-    __power6_layer_layer,
-    __power7_layer_layer,
-    __power8_layer_layer11,
-    __power8_layer_layer12,
-    __power8_layer_layer13,
-    __power8_layer_layer14
-);
-
-#endif
 
 /**
  * Taken from QMK Discord #help channel, convo between Gray and sigprof, msg date 2025/02/24
@@ -294,332 +196,164 @@ void bootloader_jump(void) {
     NVIC_SystemReset();
 }
 
-void eeconfig_init_kb(void) {
-   
-
-       //防止复位后模式通道记不住，清空之前先读出来
-
-#ifdef MK637_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-    }
-#endif
-
-#ifdef MK856_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-    }
-#endif
-
-#ifdef MK923_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-    }
-#endif
-
-
-#ifdef BK100_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-    }
-#endif
-
-#ifdef K7214b_Flash_Store
-        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-    if (variable_data.eeconfig_last_wireless_mode != 0) {
-        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
-        last_ble24G_period =  variable_data.eeconfig_ble24G_pair_flag;
-    }
-#endif 
-    
-   #if (EECONFIG_KB_DATA_SIZE) == 0
-    // // Reset Keyboard EEPROM value to blank, rather than to a set value
-    // eeconfig_update_kb(0);
-
-    // test_variable = 10;
-
-
-#endif
-
-#ifdef MK637_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    // variable_data.eeconfig_encode_toggle =0;
-    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-#endif
-
-
-#ifdef MK856_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    variable_data.eeconfig_encode_toggle =0;
-    variable_data.eeconfig_shut_up_Flag =0;
-    variable_data.eeconfig_shut_up_screen_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-#endif
-
-#ifdef MK923_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    variable_data.eeconfig_encode_toggle =0;
-    variable_data.eeconfig_shut_up_Flag =0;
-    variable_data.eeconfig_shut_up_screen_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-#endif
-
-
-#ifdef K7214b_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_ble24G_pair_flag  = last_ble24G_period;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    variable_data.eeconfig_shut_up_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-#endif
-
-#ifdef BK100_Flash_Store
-    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
-    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
-    variable_data.eeconfig_lock_win_flag =1;
-    variable_data.eeconfig_shut_up_Flag =0;
-    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-#endif
-
-    eeconfig_init_user(); 
-}
+//void eeconfig_init_kb(void) {
+//
+//       //防止复位后模式通道记不住，清空之前先读出来
+//
+//#ifdef MK637_Flash_Store
+//        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
+//    if (variable_data.eeconfig_last_wireless_mode != 0) {
+//        last_ble_mode = variable_data.eeconfig_last_wireless_mode;
+//    }
+//#endif
+//    
+//   #if (EECONFIG_KB_DATA_SIZE) == 0
+//    // // Reset Keyboard EEPROM value to blank, rather than to a set value
+//    // eeconfig_update_kb(0);
+//
+//    // test_variable = 10;
+//
+//
+//#endif
+//
+//#ifdef MK637_Flash_Store
+//    variable_data.eeconfig_last_wireless_mode    = last_ble_mode;
+//    variable_data.eeconfig_nkro_flag             = 1;  //默认全键无冲
+//    variable_data.eeconfig_win_lock_flag =1;
+//    // variable_data.eeconfig_encode_toggle =0;
+//    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
+//#endif
+//
+//
+//    eeconfig_init_user(); 
+//}
 
 
 /*全键无冲切换*/
 void key_nkro_toggle(void) {
     //全键无冲带记忆
-    if (nkro_flag != keymap_config.nkro) {
-        nkro_flag = keymap_config.nkro;
-        // dynamic_keymap_set_keycode(1, 1, 0, nkro_flag);
+    if (variable_data.eeconfig_nkro_flag != keymap_config.nkro) {
         variable_data.eeconfig_nkro_flag = keymap_config.nkro;
         eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
     }
 }
 
 
-//插入检测  
-bool get_plug_mode(void) 
-{
+
+/*插入检测  PLUG_IN为高电平USB插入;PLUG_IN为低电平USB没插1*/
+bool get_plug_mode(void) {
     if (readPin(PLUG_IN))
-    {
         return true;
-    }
     else
-    {
         return false;
-    }
 }
 
-//增加限制
-uint8_t count_ble;
-uint8_t count_24G;
-uint8_t count_USB;
-void get_mode(void)
-{
-    if (!readPin(BLE) )
-    {
-        kb_mode = KB_MODE_BLE;
-       
+/*模式切换，带强转功能*/
+enum kb_mode_t get_kb_mode(void) {
+    if (!gpio_read_pin(BT_MODE)) {
+        new_mode = KB_MODE_BLE;
+    } else if (!gpio_read_pin(PRF_MODE)) {
+        new_mode = KB_MODE_24G;
+    } else {
+        new_mode = KB_MODE_USB;
     }
-    else if((!readPin(TwoMode)))
-    {
-          kb_mode = KB_MODE_24G;
-    }
-    else 
-    {
-          kb_mode = KB_MODE_USB;
-  
-    }
-
-    // if (!readPin(SYS_SW) && (WinLayer_Flag == 0))
-    // {
-    //     WinLayer_Flag = 1;
-    //     MacLayer_Flag = 0;
-    //     set_single_persistent_default_layer(2);
-    //   //  uprintf("win\r\n");
-    // }
-
-    // if (readPin(SYS_SW) && (MacLayer_Flag == 0))
-    // {
-    //     MacLayer_Flag = 1;
-    //     WinLayer_Flag = 0;
-    //     set_single_persistent_default_layer(0);
-    //     //uprintf("mac\r\n");
-    // }
+    return new_mode;
 }
-
-
-#ifdef  mk637_special_isr
-void special_key_debounce(void)
-{
-   //中断源1 左旋    2 2.4G  3蓝牙
-   uint8_t temp_status;     
-
-   if(isr_specal_Trig)
-   {     
-         if(isr_specal_Trig == 1)
-         {
-              temp_status =  readPin(encoder_left); 
-         }
-         else if(isr_specal_Trig == 2)
-         {
-              temp_status =  readPin(TwoMode); 
-         }
-        else if(isr_specal_Trig == 3)
-         {
-              temp_status =  readPin(BLE); 
-         }
-         
-        wait_ms(5); 
-        if( (isr_specal_Trig == 1 && (temp_status !=  readPin(encoder_left)))  ||  (isr_specal_Trig == 2 && (temp_status !=  readPin(TwoMode)))  || (isr_specal_Trig == 3 && (temp_status !=  readPin(BLE)))  )
-        {   
-            //中断源再加进去
-
-            setPinInput(BLE);
-            setPinInput(TwoMode);
-            palEnableLineEvent(BLE, PAL_EVENT_MODE_BOTH_EDGES);
-            palEnableLineEvent(TwoMode, PAL_EVENT_MODE_BOTH_EDGES);
-
-
-            setPinInput(encoder_left);
-            setPinInput(encoder_right);
-            palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
-            palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
-
-            const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-            pin_t col_pins[] = MATRIX_COL_PINS;
-                for(uint8_t x=0; x<MATRIX_COLS; x++)
-                {
-                    pin_t pin;
-                    pin = col_pins[x];
-                    if (pin != NO_PIN) 
-                    {
-                        setPinOutput(pin);
-                        writePinLow(pin);
-                    }
-                }
-
-             
-                for(uint8_t x=0; x<MATRIX_ROWS; x++)
-                { 
-                    pin_t pin;
-                    pin = row_pins[x];
-                    if (pin != NO_PIN) 
-                    {
-                        setPinInputHigh(pin);
-                        palEnableLineEvent(pin, PAL_EVENT_MODE_FALLING_EDGE);
-                    }
-                }
-                PWR->CR |= (1<<0)|(1<< 10) |(1<< 11)|(3<<18);
-                PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
-                SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-                __WFI();
-                SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-        }
-   }
-    isr_specal_Trig = 0;
-    EXTI->IMR  &= ~0xffff;   
-    EXTI->EMR  &= ~0xffff;
-    EXTI->RTSR &= ~0xffff;
-    EXTI->FTSR &= ~0xffff;
-
-  
-}
-#endif
-layer_state_t default_layer_state_set_kb(layer_state_t state)
-{
-    default_layer = state;   
-    return state;
-}
-
 
 
 void keyboard_pre_init_kb(void) {
-    setPinOutput(RENUM);
-    writePinHigh(RENUM);
-    setPinOutput(B8);
-    writePinLow(B8);
+    gpio_set_pin_output(RENUM_PIN);
+    gpio_write_pin_high(RENUM_PIN);
+    gpio_set_pin_input(BT_MODE);
+    gpio_set_pin_input(PRF_MODE);
+    gpio_set_pin_input(PLUG_IN);
+    gpio_write_pin_low(EN_BACKLIT);
+    gpio_set_pin_output(EN_BACKLIT);
+    //wtf is pin 8
+    gpio_set_pin_output(B8);
+    gpio_write_pin_low(B8);
 }
 
 
 // //键盘初始化
-void keyboard_post_init_kb(void)
-{
-    uart_init(460800);
-    wait_ms(400);
-    // debug_enable=true;
-    // debug_keyboard=true;
-    // debug_matrix=true;
-    // debug_mouse=true;
-    rgblight_layers = my_rgb_layers;
-    ws2812_init();
-    // setPinOutput(ARGB_LEFT_EN);
-    // writePinHigh(ARGB_LEFT_EN);
+void keyboard_post_init_kb(void) {
+    /*bootloader校验*/
+    encode_boot();
+    /*复用引脚*/
     AFIO->MAPR = (AFIO->MAPR & ~AFIO_MAPR_SWJ_CFG_Msk);
-    AFIO->MAPR|= AFIO_MAPR_SWJ_CFG_DISABLE;
-// //全键无冲带记忆
-    // nkro_flag       = dynamic_keymap_get_keycode(1, 1, 0);
-    // keymap_config.nkro = nkro_flag;
-     eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);    //读出数据  
-    keymap_config.nkro  = variable_data.eeconfig_nkro_flag; /*是否开启全全键无冲*/
-    // lock_win_flag = variable_data.eeconfig_lock_win_flag;
-    // encode_toggle = variable_data.eeconfig_encode_toggle;
-    last_wireless_mode  = variable_data.eeconfig_last_wireless_mode;
-    eeconfig_update_keymap(&keymap_config);
-
-    // //虚拟按键
-    // encode_toggle = dynamic_keymap_get_keycode(0, 4, 9);
-    setPinInput(PLUG_IN);
-    wait_ms(1); 
-    wireless_connected=false;   
-    // last_wireless_mode = eeconfig_read_kb();
-    // lock_win_flag  = dynamic_keymap_get_keycode(1, 2, 0);
-    flag32.mode_one = 1;
-    pair_succeed_timer = timer_read32();
-//ADC初始化
-    adc_init();     //adc初始化
-    get_adc_value();
-    get_adc_vref();
+    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_DISABLE;
+    adc_init();
     Rtc_Config_Api();
+    uart_init(460800);
+    wait_ms(450);
+    ws2812_init();
+    eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
+    higher_blink_flag   = variable_data.eeconfig_higher_blink_flag;
+    last_wireless_mode  = variable_data.eeconfig_last_wireless_mode;
+    rgb_matrix_off_flag = variable_data.eeconfig_rgb_matrix_off_flag;
+    rgblight_off_flag   = variable_data.eeconfig_rgblight_off_flag;
+    win_lock_flag       = variable_data.eeconfig_win_lock_flag;
+    keymap_config.nkro  = variable_data.eeconfig_nkro_flag;
+    eeconfig_update_keymap(&keymap_config);
+    /*mac层关闭锁win*/
+    if (eeconfig_read_default_layer() == 8 || eeconfig_read_default_layer() == 16) {
+        if (win_lock_flag == true) {
+            win_lock_flag        = false;
+            memory_win_lock_flag = true;
+        }
+    }
     loop10hz_token = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
+}
+//1s执行10次 
+uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
+{
+    /*变量计数*/
+    blink_count       = (blink_count + 1) % (blink_period * 2);
+    blink_rgb_count   = (blink_rgb_count + 1) % (blink_rgb_period *2);
+    blink_reset_count = (blink_reset_count + 1) % (blink_reset_period * 2);
+    if (blink_reset_count == 0) {
+        if (blink_reset_time > 0)   blink_reset_time--;
+    }
+    /*全键无冲切换*/
+    key_nkro_toggle();
+
+    avoid_hold_key_when_usb_wakeup();
+    
+    battery_charge_status();
+
+    battery_level_test();         //adc检测
+    ble_send_battery();    //蓝牙发送百分比电量
+
+    toggle_layer();
+
+    
+    communicate_mode_toggle();
+    
+
+    mcu_reset_init();
+    
+            
+    wireless_connected_or_disconnected_operate();
+
+       
+    sleep_mode();
+
+       
+    slow_switch_fast();
+
+    return LOOP_10HZ_PERIOD;
 }
 
 
-uint8_t limit_flag;
-//1s执行10次 
-enum kb_mode_t new_kb_mode = KB_MODE_DEFALT;
-uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
-{
-    blink_counter = (blink_counter+1) % (blink_period*2);
-    ble24G_counter = (ble24G_counter+1) % (ble24G_period*2);
-    power_counter = (power_counter+1) % (power_period*2);  
-    Valorspd_counter = (Valorspd_counter+1) % (Valorspd_period*2);    
-    if(USB_DRIVER.state == USB_ACTIVE)
-    {
-        if(usb_wakeup_flag == true){
-            clear_keyboard();
-            send_keyboard_report();
-            usb_wakeup_flag = false;
+/*防止usb唤醒hold键*/
+void avoid_hold_key_when_usb_wakeup(void) {
+    if(USB_DRIVER.state == USB_ACTIVE){
+        if(usb_wakeup_send_code_flag == true){
+            tap_code16(KC_F24);
+            usb_wakeup_send_code_flag = false;
         }
-    }
-                
-    if(0 == blink_counter)
-    {   
-
-          if (release_count) {
-            if (USB_DRIVER.state == USB_ACTIVE) {
-                release_count--;
+        if(release_count){
+            if(wakeup_count == 0){
                 if (keymap_config.nkro == 1) {
                     report_nkro_t send_nkro_report;
                     memset(&send_nkro_report, 0, sizeof(report_nkro_t));
@@ -630,1031 +364,595 @@ uint32_t loop_10Hz(uint32_t trigger_time, void *cb_arg)
                     host_keyboard_send(&send_6nkro_report);
                 }
             }
-        }      
-    }
-
-    if(!default_layer)
-    {
-       default_layer = 1; 
-    }
-
-    if(timer_elapsed32(keyborad_Idtimer) >= 2000)
-    {
-
-        keyboard_Idle = 0;
-    }
-
-     if(0 == Valorspd_counter)
-     {
-      
-        if(blink_num > 0)
-        {
-            blink_num--;
-        }
-
-     }
-    if(!limit_flag)
-    {       
-        limit_flag = 1;
-        setPinOutput(ARGB_LEFT_EN);
-        writePinHigh(ARGB_LEFT_EN);
-    }
-    
-
-        
-    if(lowpower_flag)
-    lowpower_flag++;
- 
-    if((lowpower_flag > 10))
-    {
-        lowpower_flag = 0;
-    }
-    /*全键无冲切换*/
-    key_nkro_toggle();
-
-    // if(encode_Press_flag)
-    // {
-    //     if(timer_elapsed32(encode_toggle_timer) > 2000)
-    //     {
-    //         encode_toggle  = !encode_toggle;
-    //         //存储功能
-    //         // dynamic_keymap_set_keycode(0, 4, 9, encode_toggle);//虚拟按键
-    //         variable_data.eeconfig_encode_toggle = encode_toggle;
-    //         //增加常亮1s白色计时
-    //         if(!BT_24G_Shine)
-    //         {
-    //             encode_toggle_flag = 1;
-    //             encoder_longpresstimer = timer_read32(); 
-    //         }
-    //         eeconfig_update_kb_datablock(&variable_data);
-    //         encode_Press_flag = 0;
-    //     }
-    // }
-
-
-//    if(sleep_switch_driverflag) 
-//    {
-//         sleep_switch_driverflag = sleep_switch_driverflag -1;
-//         if(sleep_switch_driverflag == 3)
-//         {
-//             rgb_matrix_set_color_all(0,0,0);
-//             rgblight_set_layer_state(1,true);
-//         }
-
-
-//         if(sleep_switch_driverflag == 0)
-//         {
-//             rgblight_set_layer_state(1,false);
-//             setPinOutput(ARGB_LEFT_EN);
-//             writePinHigh(ARGB_LEFT_EN);
-     
-         
-//         }
-//    }
-
-
-
-   //恢复原来的灯效
-      
-//    if( rgblight_get_mode() != (RGBLIGHT_MODE_SNAKE))
-//    {
-//       old_effect  = rgblight_get_mode();
-//    }
-       
-//    if(rgblight_get_mode() == (RGBLIGHT_MODE_SNAKE) && ( == 1) && (Plug_In_Flag == 0))
-//    {
-//         Default_Effect_Flag = 0;
-//         rgblight_mode_noeeprom(old_effect);//
-
-//    }
-
-
-
-
-// 
-  
-
-
-
-
-
-    //uprintf("last_wireless_mode:%ld\r\n",last_wireless_mode);
-    //uprintf("layer_state :%0x\r\n",layer_state );
-    //uprintf("default_layer_state :%0x\r\n",default_layer_state);
-    //uprintf("keymap_config.nkro :%d\r\n",keymap_config.nkro); 
-    //CHRG_EN_PIN引脚拉低时，且bat_test_flag值为0是会获取adc值（只会执行一次）
-     //uprintf("FN_Count:%d\r\n",FN_Count);
-          
-  
-
-   // uprintf("last_wireless_mode:%d\r\n", last_wireless_mode);
-   //timer_elapsed32(Power_Full_timer) 
-  
-    current_layer = get_highest_layer(layer_state | default_layer);
-   // uprintf("temp:%d\r\n",temp);
- //   uprintf("FN_Count:%d\r\n",FN_Count);
-    if((bat_test_flag == false))
-    {
-        adc_value = get_adc_value();    //获取adc值
-        adc_vref =  get_adc_vref();
-        battery_value = (adc_value*1764/adc_vref);
-        battery_test_time = timer_read32();
-        temp = batt_level();
-        last_temp = temp;
-        bat_test_flag = true;              //把bat_test_flag置1，确保只进一次
-    }
-
-    adc_test();         //adc检测
-    ble_send_batt();    //蓝牙发送百分比电量
-
-
-//防止按键按下时间过长
-    if(timer_elapsed32(First_timer) > 400)
-    {
-       FN_Count = 0;
-    }
-
-    if(timer_elapsed32(Media_timer) > 100 && (Media_Flag == 1) && (FN_Count == 0))
-    {
-        Media_Flag = 2;
-
-        current_layer = get_highest_layer(layer_state | default_layer);
-        if(current_layer == 0) 
-        {
-            set_single_persistent_default_layer(4);
-        }
-        else if(current_layer == 2)
-        {
-            set_single_persistent_default_layer(6);
-        }
-        else if(current_layer == 4)
-        {
-            set_single_persistent_default_layer(0);
-        }
-        else if(current_layer == 6)
-        {
-            set_single_persistent_default_layer(2);
-        }
-    }
-
-   //检测电池发送，空闲才发送
-    if((battery_Flag == 1) && (!keyboard_Idle) )
-    {
-        battery_Flag = 0;
-        sc_ble_battary(temp); 
-    }
-
-//question
-      get_mode();
-//    上电进来一次默认为usb
-    if (kb_mode != new_kb_mode)  //ONLY DO IT ONCE WHEN MODE SWITCHED
-    {
-         new_kb_mode = kb_mode;  
-         BT_24G_Shine = 0;   //，模式切换进来一次，BT_24G_Shine = 0；
-        if(kb_mode==KB_MODE_BLE)
-        {
-            last_wireless_mode &= 3;
-            WIRELESS_START(last_wireless_mode);
-            flag32.link_break_flag =0;
-            rgb_wireless_timer = timer_read32();
-            first_sleep_timer = timer_read32();
-            packet_send = 0;
-        }
-
-
-        else if(kb_mode == KB_MODE_24G)
-        {
-            WIRELESS_START(4);
-            flag32.link_break_flag =0;
-            rgb_wireless_timer = timer_read32();
-            first_sleep_timer = timer_read32();
-            packet_send = 0;
-        }
-
-
-        else if(kb_mode == KB_MODE_USB)
-        {
-            WIRELESS_STOP();
-            pair_succeed_timer = timer_read32();
-            blink_counter = 0;
-        }
-
-
-        blink_ble_24g_timer = 0; //蓝牙回连超时     配对也是这个  
-        pair_succeed_timer = timer_read32();
-        //重新计时连接时间  
-        blink_ble_24g_timer = timer_read32(); //重新计时回连时间
-        pair_timeout = 20000;
-    //    BT_Switch_Flag = 1;
-        ble24G_period = 5;
-        ble24G_counter  = 0;
-        flag32.mode_one = 1;
-    }
-
-
-
-
-
-
-    if(1 == flag32.press_24G_flag)
-    {
-        if(timer_elapsed32(long_ble_24g_timer) > BLE_24G_TIMEOUT)
-        {
-
-            flag32.link_break_flag =0;
-            flag32.press_24G_flag = 0;
-            WIRELESS_PAIR(4);
-            blink_ble_24g_timer = timer_read32();            
-            ble24G_period = 2;
-            ble24G_counter  = 0;
-            pair_timeout = 60000;
-          //  BT_Switch_Flag = 0;
-            flag32.mode_one = 1;
-        }
-    }
-     
-
-    if(1 == flag32.press_ble_flag)
-    {
-        if(timer_elapsed32(long_ble_24g_timer) > BLE_24G_TIMEOUT)
-        {
-            flag32.link_break_flag =0;
-
-            // ble_led_state = 0;
-            flag32.press_ble_flag = 0;
-            WIRELESS_PAIR(last_wireless_mode);
-            blink_ble_24g_timer = timer_read32();
-            ble24G_period = 2;
-            ble24G_counter  = 0;
-            pair_timeout = 60000;
-          //  BT_Switch_Flag = 0;
-            flag32.mode_one = 1;
-        }
-    }
-    //以上
-
-
-             
-            
-        //长按3s复位键处理
-        if(1 == flag32.reset_flag)
-        {
-            if(timer_elapsed32(long_press_reset_timer) > RESET_TIMEOUT)
-            {
-    
-                flag32.reset_flag = 0;
-                blink_num = 3;
-                Valorspd_counter = 0;
-                reset_flag = 1;
+            wakeup_count++;
+            if(wakeup_count == 10){
+                wakeup_count = 0;
+                release_count--;
             }
         }
-
-
-        if(!wireless_connected)
-        {
-    
-            if( (flag32.link_break_flag == 1))
-            {
-                flag32.link_break_flag = 0;
-                ble24G_period = 5;
-                ble24G_counter = 0;
-                flag32.mode_one = 1;
-                connect_buff = 0;
-                pair_timeout = 20000;  
-               // BT_Switch_Flag = 1;
-                blink_ble_24g_timer = timer_read32(); //重新计时回连时间  
-            }
-        }
-        if(wireless_connected)
-        {
-            if(connect_buff == 0)
-            {
-                connect_buff = 1;
-                rgb_wireless_timer = timer_read32();
-                first_sleep_timer = timer_read32();
-                packet_send = 0;
-            }
-        }
-       sleep_mode();
- 
-
-    return LOOP_10HZ_PERIOD;
+    }
 }
 
-
-
-
-uint8_t test01 = 1;
-uint8_t unchrg_falg = 1;
-uint8_t chrg_falg = 1;
-uint8_t chrgfull_falg = 1;
-uint8_t chrg_battest = 1;
-uint8_t lowpower_effect;
-
-bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) 
-{
-
-
-
-   if(sleep_switch_driverflag) 
-   {
-        rgb_matrix_set_color_all(0,0,0);
-        rgblight_set_layer_state(1,true);
-        sleep_switch_driverflag = sleep_switch_driverflag -1;
-  
-
-        if(sleep_switch_driverflag == 50)
-        { 
-            //侧灯所有开关全关掉
-            rgblight_set_layer_state(0,false);
-            for(uint8_t i = 2;i < 12; i++)
-            {
-              rgblight_set_layer_state(i,false);
-            }  
-            setPinOutput(ARGB_LEFT_EN);
-            writePinHigh(ARGB_LEFT_EN);
-        }
-
-
-
-
-        if(sleep_switch_driverflag == 0)
-        {
-            rgblight_set_layer_state(1,false);
-
-        }
-   }
-
-
-        // if(sleep_switch_driverflag)
-        // {
-        //   rgb_matrix_set_color_all(0,0,0);
-        // }
-
-
-    if(sleep_switch_driverflag == 0)
-    {
-            if(shut_up_Flag || lock_keyboard )
-            {
-                rgb_matrix_set_color_all(0,0,0);
-                rgblight_set_layer_state(1,true);
-            }
-
-            else{
-                rgblight_set_layer_state(1,false);
-            }
-
-
-            if(((!wireless_connected) && ( (kb_mode == KB_MODE_BLE)   || ( kb_mode == KB_MODE_24G)))   || (lock_keyboard))
-            {
-                rgb_matrix_set_color_all(0,0,0);
-            } 
-
-            if(lock_keyboard)
-            {
-                rgb_matrix_set_color(34,255,255,255);
-            }
-            
-            #ifdef Effect_MK637
-
-
-
-   // use MATRIX LEDS  as RGBLIGHT LEDS ..JackyJia
-        extern ws2812_led_t ws2812_leds[WS2812_LED_COUNT];
-        for (uint8_t i=0;i<2;i++)  //3,4
-        { 
-            ws2812_set_color(3+i, ws2812_leds[i].r,ws2812_leds[i].g,ws2812_leds[i].b);
-        }
-//        ws2812_flush();
-
-#endif
-
-            // //旋钮的优先级低于模式
-            // if(!BT_24G_Shine)
-            // {
-            //     if(encode_toggle_flag)
-            //     {
-            //       if(timer_elapsed32(encoder_longpresstimer) < 1200)
-            //       { 
-            //                 rgblight_set_layer_state(12,true);
-            //       }
-            //       else
-            //       {
-            //                  encode_toggle_flag = 0;
-            //                 rgblight_set_layer_state(12,false);
-            //       }
-            //     }
-            // }
-            // else //防止闪灯期间切回模式等效
-            // {
-            //              encode_toggle_flag = 0;
-            //              rgblight_set_layer_state(12,false);
-            // }
-    
-
-
-
-
-
-                
-            //亮度和速度灯效
-        // if(!BT_24G_Shine)
-            {
-                if (blink_num != 0) {  
-                    BT_24G_Shine = 0;
-                    rgblight_set_layer_state(6,false);
-                    rgblight_set_layer_state(3,false);
-                    rgblight_set_layer_state(4,false);
-                    rgblight_set_layer_state(5,false);
-                    rgblight_set_layer_state(7,false);
-                    rgblight_set_layer_state(8,false);
-                    rgblight_set_layer_state(9,false);
-                    rgblight_set_layer_state(10,false);
-                    rgblight_set_layer_state(11,false);
-                    if (Valorspd_counter < Valorspd_period)
-                    {   
-
-                        rgblight_set_layer_state(0,true); //亮
-                        rgblight_set_layer_state(1,false); 
-                    }
-                    else
-                    {
-                        rgblight_set_layer_state(0,false); //亮
-                        rgblight_set_layer_state(1,true); 
-                    }
-                } 
-                else { 
-                    if(reset_flag)
-                    {
-                        rgblight_set_layer_state(0,false);
-                        rgblight_set_layer_state(1,false);
-                        eeconfig_init();
-                        mcu_reset();   
-                    }
-                }
-            }
-
-
-           if( ((host_keyboard_leds() & 0x02) == 0x02) && (wireless_connected || ((kb_mode == KB_MODE_USB) && (get_plug_mode() == true))  ))
-            {
-                rgb_matrix_set_color(25,255,255,255);
-                
-            }
-
-
-            //电量指示
-            if(!get_plug_mode() &&  Light_Count && ((kb_mode == KB_MODE_BLE) || (kb_mode == KB_MODE_24G))  )   //
-            {      
-                rgb_matrix_set_color_all(0,0,0); 
-                for(uint8_t i = 0;i < Light_Count; i++ )
-                {
-                    rgb_matrix_set_color(55+i,255,255,255);
-                }
-
-                if(Light_Count > 0 && (Light_Count <= 3))
-                {
-                    for(uint8_t i = 0;i < Light_Count; i++ )  //紅      紅綠可以混成黃色
-                    {
-                        rgb_matrix_set_color(55+i,255,0,0);
-                    }
-                }
-
-                if(Light_Count > 3 && (Light_Count <= 7))
-                {
-                    for(uint8_t i = 0;i < Light_Count; i++ )  //黃    紅綠可以混成黃色
-                    {
-                        rgb_matrix_set_color(55+i,255,255,0);
-                    }
-                }
-
-                if(Light_Count > 7 && (Light_Count <= 10))
-                {
-                    for(uint8_t i = 0;i < Light_Count; i++ )  //黃    紅綠可以混成黃色
-                    {
-                        rgb_matrix_set_color(55+i,0,255,0);
-                    }
-                }
-                // if(temp <30)
-                // {
-                //     rgblight_set_layer_state(5,true);
-                // }
-                // else if(temp >=30 && (temp <70))
-                // {
-                //     rgblight_set_layer_state(4,true);
-                // }
-                // else{
-                //     rgblight_set_layer_state(9,true);
-                // }
-            }
-
-            if(0 == lock_win_flag && (wireless_connected || (kb_mode == KB_MODE_USB)))
-            {   
-                    if(default_layer == 1 ||(default_layer == 16))
-                rgb_matrix_set_color(22,255,255,255);
-            }
-
-
-
-        // //充电灯效
-        //     if(get_plug_mode() && (temp < 100) && (bat_test_flag == true) && Test_Battery_value)
-        //     { 
-        //        rgb_matrix_set_color(33,255,0,0);
-        //     }
-        //低电灯效
-
-        //  充电与充满灯效    //防止上电时看起来灯效会覆盖太快，限制下时间
-
-        if(!BT_24G_Shine && (blink_num == 0))      
-        {
-                if(get_plug_mode()  && (!lowpower_flag))   
-                {
-                    //增加一个充电标志，防止via切换充电灯效
-                
-                //低电处理
-                    if(lowpower_effect == 1)
-                    {
-                        lowpower_effect = 2;
-                        rgblight_set_layer_state(11,false);
-                        rgblight_set_layer_state(10,false);
-                    }
-
-
-                    if(temp < 100)   // chrg in  
-                    {
-                       chag_via_flag = 1;
-                       //这里开始计时
-                       if(!chag_first_flag)
-                       {
-                          chag_first_flag = 1;
-                          keyborad_Chrgtimer = timer_read32(); 
-                       }
-                      if(timer_elapsed32(keyborad_Chrgtimer) < 5000)
-                      {
-                        rgblight_set_layer_state(9,true);
-                      }
-                      else{
-                        rgblight_set_layer_state(9,false);
-                      }      
-                    }
-                    else{
-                        chag_first_flag = 0;
-
-                        chag_via_flag = 0; 
-                        rgblight_set_layer_state(9,false);
-                    }
-
-
-                    // if(temp < 100)  //充电与充满互相转换
-                    // {
-                    //     // if(!Plug_In_Flag)
-                    //     // {
-                    //         // Plug_In_Flag = 1;
-                    //         Default_Effect_Flag = 1;
-                    //         rgblight_mode_noeeprom(RGBLIGHT_MODE_SNAKE); //充电灯效时不可以刷其他灯效
-                    //     // }
-                    //     //  rgblight_set_layer_state(9,false);
-                    // }
-                    // else{  //充满
-                    
-                    //      //开始计时 
-                    //      if(!Power_Full_Flag)   
-                    //      {
-                    //         Power_Full_Flag = 1;
-                    //         Power_Full_timer = timer_read32();
-                    //         rgblight_set_layer_state(9,true);
-                    //      } 
-
-                    //      if(timer_elapsed32(Power_Full_timer) >= 10000   && (Power_Full_Flag))  // 超时10s,这里有bug，第二次进去会有问题
-                    //      {
-                    //        //  Power_Full_Flag = 0;
-                    //          rgblight_set_layer_state(9,false);
-                    //      }
-                    // }
-                }
-                else
-                {        
-
-                    chag_first_flag = 0;  
-
-
-                    chag_via_flag = 0;
-                    Plug_In_Flag = 0;
-                    rgblight_set_layer_state(9,false);
-                    // Power_Full_Flag = 0;
-                    //低电报警
-                    lowpower_effect = 1;
-                    
-        
-                    if(!lowpower_flag && ((temp <=10)))
-                    {
-                        if(power_counter < power_period)
-                        {
-                            rgblight_set_layer_state(10,true);  //亮红
-                            rgblight_set_layer_state(11,false);
-                        }
-                        else
-                        {
-                            rgblight_set_layer_state(10,false);//亮黑
-                            rgblight_set_layer_state(11,true);
-                        }
-                    }
-                }
-
-        }
-        else
-        {
-            //模式灯效中关闭低电
-                    chag_via_flag = 0;
-                    rgblight_set_layer_state(10,false);  //亮红
-                    rgblight_set_layer_state(11,false);
-                    rgblight_set_layer_state(9,false);
-        }
-        if(1 == flag32.mode_one)
-        {
-            if (blink_num == 0) {
-            three_mode();
-            }
-        }
-    }
-
-
-
-    return false;
-}
-
-
-
-
-
-bool process_record_kb(uint16_t keycode, keyrecord_t* record) 
-{
-
-    if(record->event.pressed)
-    {
-        rgb_wireless_timer  = timer_read32();
-        blink_ble_24g_timer = timer_read32();
-        first_sleep_timer   = timer_read32(); 
-  //      uprintf("keycode :%d\r\n",keycode);
-       if (!wireless_connected) 
-       {
-            for (int i=0;i<5;i++)
-            {
-                uart_write(0x00);
-            }
-       }
-        packet_send = 0;
-    }
-
-
-    if(lock_keyboard)//锁键盘
-    {  
-       // if((keycode != KC_LOCK  ||(keycode != MO(1))   ||(keycode != MO(3)))) //防止上锁后解锁不了
-       if(keycode != MO(1) && (keycode != MO(3))  && (keycode != MO(5))   && (keycode != MO(7)) && (keycode != KC_LOCK))
-        {
-             if(record->event.pressed)
-             {
-                // uprintf("enter here\r\n");
-                // uprintf("enter here\r\n");
-                // uprintf("enter here\r\n");
-                // uprintf("enter here\r\n");
-                // uprintf("enter here\r\n");
-                return false;
-             }  
-  
-        } 
-    }
-    
-
-
-    if(keycode == KC_LOCK)
-    {
-       if(record->event.pressed)  
-        {
-            //松开按键，清掉fn
-            lock_keyboard = ~lock_keyboard;
-        }
-        return false;
-    } 
-
-//  
-
-
-   
-
-
-      
-
-
-
-//增加双击fn切层的功能
-    if(keycode ==  MO(5) || (keycode ==  MO(7)) ||  keycode ==  MO(1) || (keycode ==  MO(3)))
-    {
-
-        if(record->event.pressed)  
-        {
-
-             First_timer = timer_read32();
-             FN_Count++;
-            if(timer_elapsed32(Doubele_Fn_timer) < 200 && (FN_Count == 1))//第三次快速按下时清0
-            {
-                FN_Count = 0;
-                Media_Flag = 0;
-                return true; //第三次直接推出去
-
-            }
-      
-            //第一次松开到第二次按下的时间间隔小于
-            if(timer_elapsed32(Doubele_Fn_timer) < 200 && (FN_Count == 2))
-            {
-                //开始计时，超过200ms
-                //切层 
-               FN_Count = 0;
-               Media_Flag = 1; 
-               Media_timer = timer_read32();             
-            }
-            if(FN_Count == 2)
-            {
-                FN_Count = 0;
-            }
-        }
-        else{
-            //  if(timer_elapsed32(First_timer) > 400)
-            //  {
-            //     FN_Count = 0;
-            //  }
-            //松开开始计时           
-            Doubele_Fn_timer = timer_read32();
-        }
-        return true;
-    } 
-
-
-// //增加长按切换旋钮的功能 ENC_TG
-//     if (keycode == ENC_TG) {
-//         if (record->event.pressed) {
-//             encode_toggle_timer = timer_read32();   
-//             encode_Press_flag = 1;    
-//         }
-//         else{
-//                if(timer_elapsed32(encode_toggle_timer) <= 2000)
-//                {//防止长按松开会切换功能
-//                     if (!encode_toggle) 
-//                     {
-//                         tap_code(KC_MUTE);//按下时的功能
-//                     }
-//                     else{
-//                         rgb_matrix_step();
-//                     }
-//                     encode_toggle_timer = timer_read32();
-//                }
-//                encode_Press_flag = 0;
-//         }
-//        return false;
-//     }
-
-// 0    1    2     3   4    5    6     7
-// win      mac       win        mac
-// 1    2    4     8   16  32    64   128    default
-
-
-   //windows和IOS切换处理
-    if(keycode== KC_WINMODE)
-    {
-        if(record->event.pressed)  
-        {
-            if(default_layer == 4)
-            {
-              set_single_persistent_default_layer(0); //Sets the default layer and writes it to persistent memory (EEPROM).
-            }
-            else if(default_layer == 64)
-            {
+void toggle_layer(void){
+    if(timer_elapsed32(set_layer_time) > 200){
+        if(set_layer_count == 2){
+            if(eeconfig_read_default_layer() == 1){
+                set_single_persistent_default_layer(1);
+            }else if (eeconfig_read_default_layer() == 2) {
+                set_single_persistent_default_layer(0);
+            }else if (eeconfig_read_default_layer() == 16) {
+                set_single_persistent_default_layer(5);
+            }else if (eeconfig_read_default_layer() == 32){
                 set_single_persistent_default_layer(4);
             }
-
         }
-        return false;
-    } 
-
-
-
-
-
-// 0    1    2     3   4    5    6     7
-// win      mac       win        mac
-// 1    2    4     8   16  32    64   128    default
-
-
-
-    if(keycode==KC_MACMODE)
-    {
-        if (record->event.pressed)  
-        {
-            //fn双击以后切到第6层
-              if(default_layer == 1)
-              {
-                 set_single_persistent_default_layer(2); //Sets the default layer and writes it to persistent memory (EEPROM)
-              }
-              else if(default_layer == 16)
-              {
-                set_single_persistent_default_layer(6);
-              }
-        }
-        return false;
-    } 
-
-
-    if ((keycode == KC_SHUTRGB) && record->event.pressed )
-    {
-        shut_up_Flag = ~ shut_up_Flag;
+        set_layer_count = 0;
     }
+}
 
 
-       //电量检测
-    if(keycode == KC_BAT)
-    {
-        if (record->event.pressed) 
-        { 
-            Test_Battery_value = 1;
-            Light_Count = temp/10 +1;
-            if(Light_Count > 10)
-            Light_Count = 10;        
-        }
-        else
-        {
-            Test_Battery_value = 0;
-            Light_Count = 0;
-            // rgblight_set_layer_state(5,false);
-            // rgblight_set_layer_state(4,false);
-            // rgblight_set_layer_state(9,false);
+
+/*无线模式断开或连上要改变的一些变量*/
+void wireless_connected_or_disconnected_operate(void) {
+    /*无线断连*/
+    if (!wireless_connected) {
+        if (wireless_connect_flag == true) {
+            blink_wireless_time   = timer_read32();
+            wireless_connect_flag = false;
+            ble_connect_flag      = false;
         }
     }
+    /*无线连接上操作*/
+    if (wireless_connected) {
+        if (wireless_connect_flag == false) {
+            wireless_no_operation_time = timer_read32();
+            blink_period                = 5;
+            //发送心跳包变量
+            first_sleep_time     = timer_read32();
+            packet_send_time      = 0;
+            wireless_connect_flag = true;
+        }
+    }
+}
 
-
-     
-
-     
-
-    //按键切换模式   
-     if( (keycode>=KC_BLE1) && (keycode<=KC_BLE3) && (kb_mode==KB_MODE_BLE))
-    {
-        flag32.link_break_flag =0;
-        flag32.ble_report_flag = 0;
-        if(last_wireless_mode != keycode-KC_USB)  
-        {
-            if (record->event.pressed)
-            {         
-                ble_mode = keycode-KC_USB;
-                WIRELESS_START(ble_mode);
-                blink_ble_24g_timer = timer_read32();
-                long_ble_24g_timer=timer_read32();
-                flag32.mode_one = 1;
-                ble24G_period = 5;
-            //   uprintf("problem2\r\n");
-                ble24G_counter  = 0;
-                pair_timeout = 20000; 
-              //  BT_Switch_Flag = 1;
-                //解决蓝牙互切之间也可以不松手直接配对    
-                long_ble_24g_timer=timer_read32();
-                flag32.press_ble_flag = 1; 
-                            
+/*恢复出厂设置*/
+void mcu_reset_init(void) {
+    if (timer_elapsed32(long_press_reset_time) > LONG_PRESS_TIME) {
+        if (reset_flag == true) {
+            blink_reset_time  = 3;
+            blink_reset_count = 0;
+            reset_flag        = false;
+            mcu_reset_flag    = 1;
+        }
+        if (blink_reset_time == 0) {
+            if (mcu_reset_flag == 1){
+                mcu_reset_flag = 2;
+            }
+            if (mcu_reset_flag == 2) {
+                if (blink_period == 2) {
+                    higher_blink_flag                        = true;
+                    variable_data.eeconfig_higher_blink_flag = higher_blink_flag;
+                    eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
+                }
+                eeconfig_init();
+                mcu_reset();
             }
         }
-        else
-        {               
-            if (record->event.pressed)
-            {
-                long_ble_24g_timer=timer_read32();
-                flag32.press_ble_flag = 1;
+    }
+}
+
+/*慢闪变快闪*/
+void slow_switch_fast(void) {
+    if (timer_elapsed32(long_press_ble_time) > LONG_PRESS_TIME) {
+        if (long_press_ble_flag == true) {
+            WIRELESS_PAIR(last_wireless_mode);
+            higher_blink_wireless_time = timer_read32();
+            blink_period               = 2;
+            blink_count                = 0;
+            long_press_ble_flag        = false;
+        }
+    }
+    if (timer_elapsed32(long_press_24G_time) > LONG_PRESS_TIME) {
+        if (long_press_24G_flag == true) {
+            WIRELESS_PAIR(4);
+            higher_blink_wireless_time = timer_read32();
+            blink_period               = 2;
+            blink_count                = 0;
+            long_press_24G_flag        = false;
+        }
+    }
+}
+
+
+/*模式切换*/
+void communicate_mode_toggle(void) {
+    new_kb_mode = get_kb_mode();
+    /*具体进入那个模式*/
+    if (kb_mode != new_kb_mode) // ONLY DO IT ONCE WHEN MODE SWITCHED
+    {
+        kb_mode = new_kb_mode;
+        if (higher_blink_flag == false) {
+            if (kb_mode == KB_MODE_BLE) {
+                if (last_wireless_mode > 3) {
+                    last_wireless_mode = last_wireless_mode & 0x03;
+                }
+                /*开启蓝牙通道*/
+                WIRELESS_START(last_wireless_mode);
+                blink_wireless_time = timer_read32();
+                /*发送心跳包变量*/
+                first_sleep_time = timer_read32();
+                packet_send_time       = 0;
+            } else if (kb_mode == KB_MODE_24G) {
+                WIRELESS_START(4);
+                blink_wireless_time = timer_read32(); //慢闪超时计时
+                /*发送心跳包变量*/
+                first_sleep_time = timer_read32();
+                packet_send_time  = 0;
+            } else if (kb_mode == KB_MODE_USB) {
+                WIRELESS_STOP();
             }
-            else
-            {
-                if(timer_elapsed32(long_ble_24g_timer) <= BLE_24G_TIMEOUT)   
-                {
-                    flag32.press_ble_flag = 0;              
+            wireless_no_operation_time  = timer_read32(); //无线模式无操作计时
+            blink_count                 = 0;
+            blink_period                = 5;
+        } else {
+            if (kb_mode != KB_MODE_USB) {
+                if (kb_mode == KB_MODE_BLE) {
+                    WIRELESS_PAIR(last_wireless_mode);
+                } else {
+                    WIRELESS_PAIR(4);
+                }
+                wireless_no_operation_time = timer_read32(); //无线模式无操作计时
+                higher_blink_wireless_time = timer_read32();
+                /*发送心跳包变量*/
+                first_sleep_time = timer_read32();
+                packet_send_time  = 0;
+                blink_count       = 0;
+                blink_period      = 2;
+            } else {
+                WIRELESS_STOP();
+            }
+            higher_blink_flag                        = false;
+            variable_data.eeconfig_higher_blink_flag = higher_blink_flag;
+            eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
+        }
+    }
+}
+
+
+
+
+/*caps,num,scroll,win指示灯*/
+void host_keyboard_indicator_light_update(void){
+    if (kb_mode == KB_MODE_USB || wireless_connected) {
+        if (host_keyboard_led_state().caps_lock && 0x02 == 0x02) {
+            rgb_matrix_off_state |= 0x01 << 3;
+            rgb_matrix_set_color(24, 144, 144, 144);
+        }else {
+            rgb_matrix_off_state &= ~(0x01 << 3);
+        }
+        /*win_lock指示灯*/
+        if (win_lock_flag == true) {
+            rgb_matrix_off_state |= 0x01 << 4;
+            rgb_matrix_set_color(21, 144, 144, 144);
+        }else {
+            rgb_matrix_off_state &= ~(0x01 << 4);
+        }
+    }
+}
+
+/*电量查询*/
+void electricity_inquriy(void){
+    if(batt_charge_status == batt_no_charge){
+        if (battery_consult_flag) {
+            rgb_matrix_off_state |= 0x01;
+            rgb_matrix_set_color_all(0, 0, 0);
+            if(temp <= 30){
+                for (uint8_t i = 1; i <= (temp - 1) / 10 + 1; i++) {
+                    rgb_matrix_set_color(53+i, 144, 0, 0);
+                }
+            }else if (temp > 30 && temp <= 70) {
+                for (uint8_t i = 1; i <= (temp - 1) / 10 + 1; i++) {
+                    rgb_matrix_set_color(53+i, 144, 144, 0);
+                }
+            }else {
+                for (uint8_t i = 1; i <= (temp - 1) / 10 + 1; i++) {
+                    rgb_matrix_set_color(53+i, 0, 144, 0);
                 }
             }
-            
+        }else {
+            rgb_matrix_off_state &= ~0x01;
         }
-        return false;     
-    }
-
-    if (keycode == KC_24G && (kb_mode==KB_MODE_24G))
-    {  
-        {
-            if(record->event.pressed)
-            {
-                long_ble_24g_timer = timer_read32();
-                flag32.press_24G_flag = 1;
-
-            }
-            else
-            {
-                if (timer_elapsed32(long_ble_24g_timer) <= BLE_24G_TIMEOUT)    //长按广播配对
-                {
-                    flag32.press_24G_flag = 0;        
-                }
-            }
+    }else {
+        if(battery_consult_flag){
+            rgb_matrix_off_state &= ~0x01;
+            battery_consult_flag = !battery_consult_flag;
         }
-
-        return false;
     }
+}
 
-    if (keycode == KC_Mctl) {
-
-        // uprintf("mctl\r\n");
-        if (record->event.pressed)
-            register_code16(KC_MCTL);
-        else
-            unregister_code16(KC_MCTL);
+/*充电指示灯*/
+void charging_indicator_light(void){
+    /*充电指示灯*/
+    if(batt_charge_status == batt_is_charging){
+        if(batt_is_charging_flag == false){
+            batt_is_charging_time = timer_read32();
+            batt_is_charging_flag = true;
+        }
+        if(timer_elapsed32(batt_is_charging_time) < 5000){
+            rgb_matrix_off_state |= 0x01 << 5;
+            rgb_matrix_set_color(0, 0, 144, 0);
+        }else{
+            rgb_matrix_off_state &= ~(0x01 << 5);
+        }
+    }else if (batt_charge_status == batt_no_charge) {
+        if(batt_is_charging_flag == true){
+            batt_is_charging_flag = false;
+        }
+        if(temp <= 10){
+            rgb_matrix_off_state |= 0x01 << 5;
+            if (blink_rgb_count > blink_rgb_period) {
+                rgb_matrix_set_color(0, 144, 0, 0);
+            } else {
+                rgb_matrix_set_color(0, 0, 0, 0);
+            }
+        }else {
+            rgb_matrix_off_state &= ~(0x01 << 5);
+        }
+    }else {
+        rgb_matrix_off_state &= ~(0x01 << 5);
     }
-    if (keycode == KC_Lpad) {
-        
-       //  uprintf("lpad\r\n");
-        if (record->event.pressed)
-            register_code16(KC_LPAD);
-        else
-            unregister_code16(KC_LPAD);
+}
+
+/*复位指示灯*/
+void mcu_reset_indicator_light(void){
+    if (blink_reset_time != 0) {
+        rgb_matrix_off_state |= 0x01 << 6;
+        if (blink_reset_count > blink_reset_period) {
+            rgb_matrix_set_color_all(60,60,60);
+        } else {
+            rgb_matrix_set_color_all(0,0,0);
+        }
+    }else {
+        rgb_matrix_off_state &= ~(0x01 << 6);
     }
+}
 
-
-//question
-    
-    if(((keycode==KC_WIN)) && record->event.pressed)
-    {
-    
-        lock_win_flag = !lock_win_flag;
-      //  dynamic_keymap_set_keycode(1, 2, 0,lock_win_flag);
-        variable_data.eeconfig_lock_win_flag = lock_win_flag;
-        eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
-
+/*休眠关灯*/
+void sleep_off_rgb(void){
+    if ((batt_charge_status == batt_no_charge && temp == 0) || enable_rgb_pin_flag == false ) {
+        rgb_matrix_set_color_all(RGB_OFF);
     }
+}
 
-    
+bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
+     if (rgb_matrix_off_flag == true || (batt_charge_status == batt_no_charge && (temp <= 10))){
+         rgb_matrix_set_color_all(RGB_OFF);
+     }
+     /*电量查询*/
+     electricity_inquriy();
+     /*对应什么模式会亮什么灯*/
+     mode_indicator_light_init();
+     /*caps指示*/
+     host_keyboard_indicator_light_update();
+     /*充电指示灯*/
+     charging_indicator_light();
+     /*复位指示灯*/
+     mcu_reset_indicator_light();
+     /*纯白灯效*/
+     if(white_rgb_flag){
+         rgb_matrix_off_state |= 0x01 << 6;
+         rgb_matrix_set_color_all(60,60,60);
+     }else {
+         rgb_matrix_off_state &= ~(0x01 << 6);
+     }
+     
+     /*休眠关灯*/
+     sleep_off_rgb();
  
+     return false; 
 
-    if(record->event.pressed && ((keycode == KC_LGUI) || (keycode == KC_RGUI)))
-    {
-        if(default_layer == 1 || (default_layer == 16))  //第0层为1，第5层为16
-        { 
-            if(lock_win_flag== 1)
-            return true;
-            else
-            return false;
-            
+}
+
+/*模式指示灯*/
+    void mode_indicator_light_init(void) {
+    if (kb_mode == KB_MODE_BLE && !wireless_connected) {
+        rgb_matrix_off_state |= 0x01 << 1;
+        ble_connect_time = timer_read32();
+        switch (last_wireless_mode) {
+            case 1:
+                if (blink_count > blink_period)
+                    rgb_matrix_set_color(51, 0, 0, 144);
+                else
+                    rgb_matrix_set_color(51, 0, 0, 0);
+                break;
+            case 2:
+                if (blink_count > blink_period)
+                    rgb_matrix_set_color(50, 144, 144, 0);
+                else
+                    rgb_matrix_set_color(50, 0, 0, 0);
+                break;
+            case 3:
+                if (blink_count > blink_period)
+                    rgb_matrix_set_color(49, 144, 0, 0);
+                else
+                    rgb_matrix_set_color(49, 0, 0, 0);
+                break;
+            default:
+                break;
         }
+    } else if (kb_mode == KB_MODE_BLE && wireless_connected) {
+        if(timer_elapsed32(ble_connect_time) < 3000){
+            rgb_matrix_off_state |= 0x01 << 1;
+            switch (last_wireless_mode) {
+                case 1:
+                    rgb_matrix_set_color(51, 0, 0, 144);
+                    break;
+                case 2:
+                    rgb_matrix_set_color(50, 144, 144, 0);
+                    break;
+                case 3:
+                    rgb_matrix_set_color(49, 144, 0, 0);
+                    break;
+                default:
+                    break;
+            }
+        }else {
+            rgb_matrix_off_state &= ~(0x01 << 1);
+        }
+    }else if (kb_mode == KB_MODE_24G && !wireless_connected) {
+        rgb_matrix_off_state |= 0x01 << 2;
+        prf_connect_time = timer_read32();
+        if (blink_count > blink_period)
+            rgb_matrix_set_color(48, 0, 144, 0);
+        else
+            rgb_matrix_set_color(48, 0, 0, 0);
+    } else if (kb_mode == KB_MODE_24G && wireless_connected) {
+        if(timer_elapsed32(prf_connect_time) < 3000){
+            rgb_matrix_off_state |= 0x01 << 2;
+            rgb_matrix_set_color(48, 0, 144, 0);
+        }else {
+            rgb_matrix_off_state &= ~(0x01 << 2);
+        }
+        if (sleep_24G_flag == true) {
+            tap_code16(KC_F24);
+            sleep_24G_flag = false;
+        }
+    }else {
+        rgb_matrix_off_state &= ~(0x03 << 1);
     }
+}
 
 
-    switch(keycode)
-    {
-        case KC_RESET:
-            if (record->event.pressed)  //恢复出厂设置 
-            {
-                flag32.reset_flag = 1;
-                long_press_reset_timer = timer_read32();  //按下按键时就给个标志位，开始计时
+void rgblight_indicators_advanced_kb(void) {
+        if (rgblight_off_flag == true || (batt_charge_status == batt_no_charge && (temp <= 10))){
+            for(uint8_t i = 3; i < 5; i++){
+                rgb_matrix_set_color(i,0,0,0);
             }
-            else                        //松手进入一次else
-            {
-                flag32.reset_flag = 0;
+        }
+        if(white_rgb_flag){
+            for(uint8_t i = 3; i < 5; i++){
+                rgb_matrix_set_color(i,28,28,28);
             }
-        break;
-
-//#if (defined(RGBLIGHT_ENABLE) && !defined(RGBLIGHT_DISABLE_KEYCODES)) || (defined(RGB_MATRIX_ENABLE) && !defined(RGB_MATRIX_DISABLE_KEYCODES))
-//            uint8_t shifted = get_mods() & MOD_MASK_SHIFT;
-//#endif
-#ifdef Right_Switch_MK637
-        case KC_MODEPLUS:
-            if(!chag_via_flag)
-                rgblight_step_noeeprom();
-//            uprintf("enter here\r\n");
-            break;
-        case KC_HUEPLS:
-            if(!chag_via_flag)
-               rgblight_increase_hue_noeeprom(); 
-            break;
-
-        case KC_VAL_UP:
-            if(!chag_via_flag) {
-                rgblight_increase_val_noeeprom();
+        }
+        /*休眠关灯*/
+        if (enable_rgb_pin_flag == false) {
+            for(uint8_t i = 3; i < 5; i++){
+                rgb_matrix_set_color(i,20,20,20);
             }
-            break;
+        }
 
-        case KC_VAL_DN:
-            if(!chag_via_flag)
-                rgblight_decrease_val_noeeprom();
-             break;
-            //  case KC_SPD_UP:
-            //  handleKeycodeRGB(shifted, rgblight_increase_speed, rgblight_decrease_speed);
-            // return false;
+        if((rgb_matrix_off_flag && rgblight_off_flag && rgb_matrix_off_state == 0) || (rgb_matrix_get_val() == 0 && rgblight_get_val() == 0 && rgb_matrix_off_state == 0)){
+            if (enable_rgb_pin_flag) {
+                gpio_write_pin_low(EN_BACKLIT);
+                enable_rgb_pin_flag = !enable_rgb_pin_flag;
+            }
+        }else {
+            if(!enable_rgb_pin_flag){
+                if(!wakeup_first_sleep_flag){
+                    gpio_write_pin_high(EN_BACKLIT);
+                    enable_rgb_pin_flag = !enable_rgb_pin_flag;
+                }
+            }
+        }
 
-            // case KC_SPD_DN:
-            //   handleKeycodeRGB(shifted, rgblight_decrease_speed, rgblight_increase_speed);
-#endif
-        default:
-            break;
+}
 
-    }   
-    return process_record_user(keycode, record);   
+
+
+bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
+
+        /*长按快闪*/
+        if(kb_mode == KB_MODE_BLE){
+            if ((keycode >= KC_BLE1 && keycode <= KC_BLE3)) {
+                if (last_wireless_mode != keycode - KC_24G){
+                    if (record->event.pressed) {
+                        WIRELESS_START(keycode - KC_24G);
+                        blink_wireless_time = timer_read32();
+                        long_press_ble_time = timer_read32();
+                        long_press_ble_flag = true;
+                        blink_period        = 5;
+                        blink_count         = 0;
+                    }
+                }else{
+                    if (record->event.pressed) {
+                        long_press_ble_time = timer_read32();
+                        long_press_ble_flag = true;
+                    } else {
+                        if (timer_elapsed32(long_press_ble_time) < LONG_PRESS_TIME) {
+                            long_press_ble_flag = false;
+                        }
+                    }
+                }
+                return false;
+            }
+        }
+        /*2.4G切换*/
+        if (kb_mode == KB_MODE_24G){
+            if (keycode == KC_24G) {
+                if (record->event.pressed) {
+                    long_press_24G_flag = true;
+                    long_press_24G_time = timer_read32();
+                } else {
+                    if (timer_elapsed32(long_press_24G_time) < LONG_PRESS_TIME) {
+                        long_press_24G_flag = false;
+                    }
+                }
+                return false;
+            }
+        }
+        /*切mac层*/
+        if(keycode == KC_MAC){
+            if(record->event.pressed){
+                if(eeconfig_read_default_layer() == 1){
+                    set_single_persistent_default_layer(4);
+                }else if (eeconfig_read_default_layer() == 2) {
+                    set_single_persistent_default_layer(5);
+                }
+                if(win_lock_flag == true){
+                    win_lock_flag        = false;
+                    memory_win_lock_flag = true;
+                }
+            }
+            return false;
+        }
+        /*切win层*/
+        if(keycode == KC_WIN){
+            if(record->event.pressed){
+                if(eeconfig_read_default_layer() == 16){
+                    set_single_persistent_default_layer(0);
+                }else if (eeconfig_read_default_layer() == 32) {
+                    set_single_persistent_default_layer(1);
+                }
+                if(memory_win_lock_flag == true){
+                    win_lock_flag        = true;
+                    memory_win_lock_flag = false;
+                }
+            }
+            return false;
+        }
+        /*复位*/
+        if (keycode == KC_RESET) {
+            if (record->event.pressed) {
+                long_press_reset_time = timer_read32();
+                reset_flag            = true;
+            } else {
+                if (timer_elapsed32(long_press_reset_time) < 3000) {
+                    reset_flag = false;
+                }
+            }
+            return false;
+        }
+        
+        if(keycode == KC_WHITE){
+            if(record->event.pressed)
+                white_rgb_flag = true;
+            else
+                white_rgb_flag = false;
+        }
+        /*开关灯*/
+        if((batt_charge_status != batt_no_charge || temp > 10)){
+            if (keycode == KC_SHUTRGB && record->event.pressed) {
+                if(rgb_matrix_off_flag == false || rgblight_off_flag == false){
+                    rgb_matrix_off_flag = true; /*关闭矩阵灯标志位*/
+                    rgblight_off_flag   = true;
+                }else {
+                    rgb_matrix_off_flag = false; /*关闭矩阵灯标志位*/
+                    rgblight_off_flag   = false;
+                }
+                variable_data.eeconfig_rgb_matrix_off_flag = rgb_matrix_off_flag;
+                variable_data.eeconfig_rgblight_off_flag   = rgblight_off_flag;
+                eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
+                return false;
+            }
+        }
+        /*关灯时候，所有rgb_martix灯光调试快捷键的全部失效*/
+        if (rgb_matrix_off_flag == true || (batt_charge_status == batt_no_charge && temp <= 10)) {
+            if(keycode == RM_SPDD || keycode == RM_SPDU || keycode == RM_VALD  || keycode == RM_VALU || keycode == RM_SATD
+                ||keycode == RM_SATU  || keycode == RM_HUED || keycode == RM_HUEU || keycode == RM_PREV || keycode == RM_NEXT){
+                return false;
+            }
+        }
+    
+        if(rgblight_off_flag == true || (batt_charge_status == batt_no_charge && temp <= 10)){
+            if(keycode == KC_MODE || keycode == RM_VALD || keycode == RM_VALU){
+                return false;
+            }
+        }
+    
+//        /*MAC层的自定义按键*/
+//        if (keycode == KC_Mctl) {
+//            if (record->event.pressed)
+//                register_code16(KC_MCTL);
+//            else
+//                unregister_code16(KC_MCTL);
+//        }
+//        if (keycode == KC_Lpad) {
+//            if (record->event.pressed)
+//                register_code16(KC_LPAD);
+//            else
+//                unregister_code16(KC_LPAD);
+//        }
+//        if (keycode == KC_Lopt) {
+//            if (record->event.pressed)
+//                register_code16(KC_LOPT);
+//            else
+//                unregister_code16(KC_LOPT);
+//        }
+//        if (keycode == KC_Lcmd) {
+//            if (record->event.pressed)
+//                register_code16(KC_LCMD);
+//            else
+//                unregister_code16(KC_LCMD);
+//        }
+//        if (keycode == KC_Rcmd) {
+//            if (record->event.pressed)
+//                register_code16(KC_RCMD);
+//            else
+//                unregister_code16(KC_RCMD);
+//        }
+        /*锁win*/
+        if(keycode == KC_LOCK){
+            if (record->event.pressed){
+                win_lock_flag = !win_lock_flag;
+                variable_data.eeconfig_win_lock_flag = win_lock_flag ;
+                eeconfig_update_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
+                return false;
+            }
+        }
+        if(keycode == KC_LGUI || keycode == KC_RGUI){
+            if (record->event.pressed){
+                if(win_lock_flag){
+                    return false;
+                }
+            }
+        }
+        /*电池电量检测*/
+        if(batt_charge_status == batt_no_charge){
+            if (keycode == KC_BAT) {
+                if (record->event.pressed)
+                    battery_consult_flag = true;
+                else
+                    battery_consult_flag = false;
+                return false;
+            }
+        }
+    
+        if(keycode == MO(2) || keycode == MO(3) || keycode == MO(6)||keycode == MO(7)){
+            if(record->event.pressed){
+                if(timer_elapsed32(set_layer_time) < 200){
+                    if(set_layer_count != 0){
+                        set_layer_count++;
+                    }
+                }
+                if(set_layer_count == 0){
+                    set_layer_count = 1;
+                    set_layer_time = timer_read32();
+                }
+            }
+            return true;
+        }
+    
+        return process_record_user(keycode, record);
 }
 
 
@@ -1664,29 +962,29 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record)
 
 bool encoder_update_kb(uint8_t index, bool clockwise) {
 
-        // uprintf("problem2\r\n");
-        // uprintf("problem2\r\n");
-        // uprintf("problem2\r\n");
-        // uprintf("problem2\r\n");
-        // uprintf("problem2\r\n");
-        // uprintf("problem2\r\n");
-        //增加限制，锁键盘也不可以旋转切换
-        if(!lock_keyboard)
-        {
-            // if (encode_toggle == 1) { /* First encoder */
-            //     if (clockwise) {
-            //         rgb_matrix_decrease_val();
-            //     } else {
-            //         rgb_matrix_increase_val();
-            //     }
-            // } else if (encode_toggle == 0) { /* Second encoder */
-            //     if (clockwise) {
-            //         tap_code(KC_VOLD);
-            //     } else {
-            //         tap_code(KC_VOLU);
-            //     }
-            // }
-        }
+//        // uprintf("problem2\r\n");
+//        // uprintf("problem2\r\n");
+//        // uprintf("problem2\r\n");
+//        // uprintf("problem2\r\n");
+//        // uprintf("problem2\r\n");
+//        // uprintf("problem2\r\n");
+//        //增加限制，锁键盘也不可以旋转切换
+//        if(!lock_keyboard)
+//        {
+//            // if (encode_toggle == 1) { /* First encoder */
+//            //     if (clockwise) {
+//            //         rgb_matrix_decrease_val();
+//            //     } else {
+//            //         rgb_matrix_increase_val();
+//            //     }
+//            // } else if (encode_toggle == 0) { /* Second encoder */
+//            //     if (clockwise) {
+//            //         tap_code(KC_VOLD);
+//            //     } else {
+//            //         tap_code(KC_VOLU);
+//            //     }
+//            // }
+//        }
 
     return false;
 }
@@ -1694,1031 +992,869 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
 
 
 
- void three_mode(void)
-{
-    switch(kb_mode)
-    {
-        case KB_MODE_USB:
-                        rgblight_set_layer_state(6,false);
-                        rgblight_set_layer_state(3,false);
-                        rgblight_set_layer_state(4,false);
-                        rgblight_set_layer_state(5,false);
-                        rgblight_set_layer_state(7,false);
-                        rgblight_set_layer_state(8,false);
-                    
-        break;
+// void three_mode(void)
+//{
+//    switch(kb_mode)
+//    {
+//        case KB_MODE_USB:
+////                        rgblight_set_layer_state(6,false);
+////                        rgblight_set_layer_state(3,false);
+////                        rgblight_set_layer_state(4,false);
+////                        rgblight_set_layer_state(5,false);
+////                        rgblight_set_layer_state(7,false);
+////                        rgblight_set_layer_state(8,false);
+//                    
+//        break;
+//
+//        case KB_MODE_BLE:
+//
+////                rgblight_set_layer_state(7,false);
+////                rgblight_set_layer_state(8,false);
+//                if(!wireless_connected)
+//                {             
+//                    if(timer_elapsed32(blink_ble_24g_timer) <= pair_timeout)
+//                    {
+//                        switch (last_wireless_mode) 
+//                        {
+//                            case 1:
+////                                 rgblight_set_layer_state(4,false);
+////                                 rgblight_set_layer_state(5,false);
+//                                if(ble24G_counter < ble24G_period)
+//                                {
+//                                    // if(BT_Switch_Flag)
+//                                    // rgb_matrix_set_color(52,0,255,0); //蓝牙回连绿色，配对蓝色
+//                                    // else
+//                                     rgb_matrix_set_color(52,0,0,255);
+//                               
+////                                    rgblight_set_layer_state(3,true);
+////                                    rgblight_set_layer_state(6,false);
+//                                }
+//                                else
+//                                {     
+////                                     rgblight_set_layer_state(6,true);
+////                                     rgblight_set_layer_state(3,false);
+//                                    rgb_matrix_set_color(52,0,0,0);
+//                                }
+//                            break;
+//
+//                            case 2: 
+////                                 rgblight_set_layer_state(3,false);
+////                                 rgblight_set_layer_state(5,false); 
+//                                if(ble24G_counter < ble24G_period)
+//                                {
+////                                    rgblight_set_layer_state(6,false);
+////                                    rgblight_set_layer_state(4,true);;
+//                                
+//                                }
+//                                else
+//                                {
+////                                     rgblight_set_layer_state(4,false);
+////                                     rgblight_set_layer_state(6,true);
+//                                  
+//                                }
+//                            break;
+//
+//                            case 3:
+////                                 rgblight_set_layer_state(4,false);
+////                                 rgblight_set_layer_state(3,false);  
+//                                if(ble24G_counter < ble24G_period)
+//                                {
+////                                    rgblight_set_layer_state(6,false);
+////                                    rgblight_set_layer_state(5,true);;
+//                                }
+//                                else
+//                                {
+////                                     rgblight_set_layer_state(5,false);
+////                                     rgblight_set_layer_state(6,true);
+//                                  
+//                                }     
+//                            break;
+//                            default:
+//                            break;
+//                        }
+//                    }
+//                    else{
+////                        rgblight_set_layer_state(6,false);
+////                        rgblight_set_layer_state(3,false);
+////                        rgblight_set_layer_state(4,false);
+////                        rgblight_set_layer_state(5,false);
+//                        POWER_EnterSleep();  
+//                         BT_24G_Shine = 0;  
+//                    }
+//                    pair_succeed_timer = timer_read32();
+//                    if (blink_num == 0) { 
+//                      BT_24G_Shine = 1;
+//                    }
+//                }
+//                else    
+//                {
+////                     rgblight_set_layer_state(6,false);
+//                    flag32.link_break_flag = 1;
+//                    if(timer_elapsed32(pair_succeed_timer) <= PAIR_SUCCEED_TIME)
+//                    {
+////                          rgblight_set_layer_state(6,false);
+//                        switch (last_wireless_mode) 
+//                        {
+//                            case 1:
+////                                     rgblight_set_layer_state(3,true);
+//                                     
+//                            break;
+//
+//                            case 2:   
+//
+////                                      rgblight_set_layer_state(4,true);
+//                            break;
+//
+//                            case 3:   
+//
+////                                      rgblight_set_layer_state(5,true);
+//                            break;
+//                            default:
+//                                break;
+//                        }
+//                        BT_24G_Shine = 1; //蓝牙没有连上
+//                    }
+//                    else
+//                    {
+//                         BT_24G_Shine = 0; 
+////                        rgblight_set_layer_state(3,false);
+////                        rgblight_set_layer_state(4,false);
+////                        rgblight_set_layer_state(5,false);
+////                        rgblight_set_layer_state(6,false);
+//                        flag32.mode_one = 0;                                          
+//                    }  
+//                }
+//        break;
+//
+//        case KB_MODE_24G:
+//
+////                    rgblight_set_layer_state(6,false);
+////                    rgblight_set_layer_state(3,false);
+////                    rgblight_set_layer_state(4,false);
+////                    rgblight_set_layer_state(5,false);
+//                if(!wireless_connected)
+//                {
+//                    if(timer_elapsed32(blink_ble_24g_timer) <= pair_timeout)
+//                    {
+//                        if(ble24G_counter < ble24G_period)
+//                        {
+////                                rgblight_set_layer_state(8,false);
+////                                rgblight_set_layer_state(7,true);
+//                        }
+//                        else 
+//                        {
+////                               rgblight_set_layer_state(7,false);
+////                               rgblight_set_layer_state(8,true);
+//                        } 
+//                    }
+//                    else{
+////                                rgblight_set_layer_state(7,false);
+////                                rgblight_set_layer_state(8,false);
+//                                POWER_EnterSleep();
+//                                BT_24G_Shine = 0;  
+//                    }
+//                    pair_succeed_timer = timer_read32();
+//                    if (blink_num == 0) { 
+//                      BT_24G_Shine = 1; 
+//                    }
+//                }
+//                else
+//                {
+//                    flag32.link_break_flag = 1;
+//                    if(timer_elapsed32(pair_succeed_timer) <= PAIR_SUCCEED_TIME)
+//                    {
+////                          rgblight_set_layer_state(8,false);
+////                          rgblight_set_layer_state(7,true);
+//                    }
+//                    else
+//                    {
+////                          rgblight_set_layer_state(7,false);
+////                          rgblight_set_layer_state(8,false);
+//                           BT_24G_Shine = 0;                                 
+//                    } 
+//                    
+//                   if(wakeup_pack24G)
+//                   {
+//                        wakeup_pack24G = 0;
+//                        tap_code(KC_F24);
+//                   }
+//                }
+//        break;
+//        default:
+//        break;
+//    }
+//
+//}
 
-        case KB_MODE_BLE:
 
-                rgblight_set_layer_state(7,false);
-                rgblight_set_layer_state(8,false);
-                if(!wireless_connected)
-                {             
-                    if(timer_elapsed32(blink_ble_24g_timer) <= pair_timeout)
-                    {
-                        switch (last_wireless_mode) 
-                        {
-                            case 1:
-                                 rgblight_set_layer_state(4,false);
-                                 rgblight_set_layer_state(5,false);
-                                if(ble24G_counter < ble24G_period)
-                                {
-                                    // if(BT_Switch_Flag)
-                                    // rgb_matrix_set_color(52,0,255,0); //蓝牙回连绿色，配对蓝色
-                                    // else
-                                     rgb_matrix_set_color(52,0,0,255);
-                               
-                                    rgblight_set_layer_state(3,true);
-                                    rgblight_set_layer_state(6,false);
-                                }
-                                else
-                                {     
-                                     rgblight_set_layer_state(6,true);
-                                     rgblight_set_layer_state(3,false);
-                                    rgb_matrix_set_color(52,0,0,0);
-                                }
-                            break;
 
-                            case 2: 
-                                 rgblight_set_layer_state(3,false);
-                                 rgblight_set_layer_state(5,false); 
-                                if(ble24G_counter < ble24G_period)
-                                {
-                                    rgblight_set_layer_state(6,false);
-                                    rgblight_set_layer_state(4,true);;
-                                
-                                }
-                                else
-                                {
-                                     rgblight_set_layer_state(4,false);
-                                     rgblight_set_layer_state(6,true);
-                                  
-                                }
-                            break;
 
-                            case 3:
-                                 rgblight_set_layer_state(4,false);
-                                 rgblight_set_layer_state(3,false);  
-                                if(ble24G_counter < ble24G_period)
-                                {
-                                    rgblight_set_layer_state(6,false);
-                                    rgblight_set_layer_state(5,true);;
-                                }
-                                else
-                                {
-                                     rgblight_set_layer_state(5,false);
-                                     rgblight_set_layer_state(6,true);
-                                  
-                                }     
-                            break;
-                            default:
-                            break;
-                        }
-                    }
-                    else{
-                        rgblight_set_layer_state(6,false);
-                        rgblight_set_layer_state(3,false);
-                        rgblight_set_layer_state(4,false);
-                        rgblight_set_layer_state(5,false);
-                        POWER_EnterSleep();  
-                         BT_24G_Shine = 0;  
-                    }
-                    pair_succeed_timer = timer_read32();
-                    if (blink_num == 0) { 
-                      BT_24G_Shine = 1;
-                    }
-                }
-                else    
-                {
-                     rgblight_set_layer_state(6,false);
-                    flag32.link_break_flag = 1;
-                    if(timer_elapsed32(pair_succeed_timer) <= PAIR_SUCCEED_TIME)
-                    {
-                          rgblight_set_layer_state(6,false);
-                        switch (last_wireless_mode) 
-                        {
-                            case 1:
-                                     rgblight_set_layer_state(3,true);
-                                     
-                            break;
 
-                            case 2:   
+//void gpio_disable_init(void)
+//{
+//    setPinOutput(ARGB_LEFT_EN);
+//    writePinLow(ARGB_LEFT_EN);
+//
+//      //  setPinInput(ARGB_LEFT_EN);
+//    palSetLineMode(OSC_IN,PAL_MODE_INPUT_ANALOG);  //0.23ma
+//    palSetLineMode(OSC_OUT,PAL_MODE_INPUT_ANALOG);
+//}
+////question
+//void gpio_init(void)
+//{
+//    //插入检测引脚
+//   setPinInput(PLUG_IN);
+//    //晶振引脚初始
+//   setPinInput(OSC_IN);
+//   setPinOutput(OSC_OUT);
+//}
+//
 
-                                      rgblight_set_layer_state(4,true);
-                            break;
-
-                            case 3:   
-
-                                      rgblight_set_layer_state(5,true);
-                            break;
-                            default:
-                                break;
-                        }
-                        BT_24G_Shine = 1; //蓝牙没有连上
-                    }
-                    else
-                    {
-                         BT_24G_Shine = 0; 
-                        rgblight_set_layer_state(3,false);
-                        rgblight_set_layer_state(4,false);
-                        rgblight_set_layer_state(5,false);
-                        rgblight_set_layer_state(6,false);
-                        flag32.mode_one = 0;                                          
-                    }  
-                }
-        break;
-
-        case KB_MODE_24G:
-
-                    rgblight_set_layer_state(6,false);
-                    rgblight_set_layer_state(3,false);
-                    rgblight_set_layer_state(4,false);
-                    rgblight_set_layer_state(5,false);
-                if(!wireless_connected)
-                {
-                    if(timer_elapsed32(blink_ble_24g_timer) <= pair_timeout)
-                    {
-                        if(ble24G_counter < ble24G_period)
-                        {
-                                rgblight_set_layer_state(8,false);
-                                rgblight_set_layer_state(7,true);
-                        }
-                        else 
-                        {
-                               rgblight_set_layer_state(7,false);
-                               rgblight_set_layer_state(8,true);
-                        } 
-                    }
-                    else{
-                                rgblight_set_layer_state(7,false);
-                                rgblight_set_layer_state(8,false);
-                                POWER_EnterSleep();
-                                BT_24G_Shine = 0;  
-                    }
-                    pair_succeed_timer = timer_read32();
-                    if (blink_num == 0) { 
-                      BT_24G_Shine = 1; 
-                    }
-                }
-                else
-                {
-                    flag32.link_break_flag = 1;
-                    if(timer_elapsed32(pair_succeed_timer) <= PAIR_SUCCEED_TIME)
-                    {
-                          rgblight_set_layer_state(8,false);
-                          rgblight_set_layer_state(7,true);
-                    }
-                    else
-                    {
-                          rgblight_set_layer_state(7,false);
-                          rgblight_set_layer_state(8,false);
-                           BT_24G_Shine = 0;                                 
-                    } 
-                    
-                   if(wakeup_pack24G)
-                   {
-                        wakeup_pack24G = 0;
-                        tap_code(KC_F24);
-                   }
-                }
-        break;
-        default:
-        break;
-    }
-
+void variable_init(void){
+    blink_count          = 0;
+    blink_rgb_count      = 0;
+    blink_reset_count    = 0;
+    mcu_reset_flag       = 0;
+    blink_reset_time     = 0;
+    set_layer_count      = 0;
+    reset_flag           = false;
+    white_rgb_flag       = false;
+    long_press_ble_flag  = false;
+    long_press_24G_flag  = false;
+    enable_rgb_pin_flag  = false;
+    battery_consult_flag = false;
 }
 
 
-
-
-
-void gpio_disable_init(void)
-{
-    setPinOutput(ARGB_LEFT_EN);
-    writePinLow(ARGB_LEFT_EN);
-
-      //  setPinInput(ARGB_LEFT_EN);
-    palSetLineMode(OSC_IN,PAL_MODE_INPUT_ANALOG);  //0.23ma
-    palSetLineMode(OSC_OUT,PAL_MODE_INPUT_ANALOG);
-}
-//question
-void gpio_init(void)
-{
-    //插入检测引脚
-   setPinInput(PLUG_IN);
-    //晶振引脚初始
-   setPinInput(OSC_IN);
-   setPinOutput(OSC_OUT);
-}
-
-
-
-
-
-void usb_suspend_power_down(void)
-{
-    sleep_switch_driverflag = 200;
-    release_count = 4;
+/*有线休眠*/
+void usb_suspend_power_down(void) {
+    gpio_write_pin_low(EN_BACKLIT);
     cancel_deferred_exec(loop10hz_token);
-    gpio_disable_init();
-    setPinInput(BLE);
-    setPinInput(TwoMode);
-    palEnableLineEvent(BLE, PAL_EVENT_MODE_BOTH_EDGES);
-    palEnableLineEvent(TwoMode, PAL_EVENT_MODE_BOTH_EDGES);
-
+    /*晶振*/
+    palSetLineMode(OSC_IN,PAL_MODE_INPUT_ANALOG);
+    palSetLineMode(OSC_OUT,PAL_MODE_INPUT_ANALOG);
+    /*设置按键唤醒休眠*/
+    set_row_and_col_when_sleep();
+    /*拔插USB唤醒*/
+    gpio_set_pin_input(PLUG_IN);
+    palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
+    gpio_set_pin_input(BT_MODE);
+    palEnableLineEvent(BT_MODE, PAL_EVENT_MODE_BOTH_EDGES);
+    gpio_set_pin_input(PRF_MODE);
+    palEnableLineEvent(PRF_MODE,PAL_EVENT_MODE_BOTH_EDGES);
+    _pal_lld_enablepadevent(0, 18, PAL_EVENT_MODE_BOTH_EDGES);
     setPinInput(encoder_left);
     setPinInput(encoder_right);
     palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
     palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
-    #if (DIODE_DIRECTION == ROW2COL)
+    
+    ADC1->CR2 &= ~ADC_CR2_ADON;
+    PWR->CR |= (1 << 0) | (1 << 10) | (1 << 11) | (3 << 18);
+    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+    __WFI();
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+    key_debounce();
+    SCB->SCR   &= ~SCB_SCR_SLEEPDEEP_Msk;
+    EXTI->IMR  &= ~(1 << 18);
+    EXTI->EMR  &= ~(1 << 18);
+    EXTI->RTSR &= ~(1 << 18);
+    EXTI->FTSR &= ~(1 << 18);
+    EXTI->PR   =   (1 << 18);
+    stm32_clock_init();
+    clear_keyboard();
+    send_keyboard_report();
+    usbWakeupHost(&USB_DRIVER); //解决休眠无法唤醒的问题
+    restart_usb_driver(&USB_DRIVER);
+    init_usb_driver(&USB_DRIVER); // Should not enter SLEEP when USB mode
+    matrix_init();
+    ws2812_init();
+    adc_init();
+    release_count    = 2;
+    usb_suspend_flag = 2;
+    wakeup_count     = 0;
+    /*一旦进入休眠，之前的恢复出厂将会失效*/
+    variable_init();
+    loop10hz_token   = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
+}
 
-    pin_t col_pins[] = MATRIX_COL_PINS;
+/*一级休眠*/
+void First_Level_Sleep(void) {
+    gpio_write_pin_low(EN_BACKLIT);
+    cancel_deferred_exec(loop10hz_token);
+    usb_disconnect(); // Don't enter SLEEP when USB mode
+    /*晶振*/
+    palSetLineMode(OSC_IN,PAL_MODE_INPUT_ANALOG);
+    palSetLineMode(OSC_OUT,PAL_MODE_INPUT_ANALOG);
+    /*关闭usb的DP,DN*/
+    gpio_write_pin_low(RENUM_PIN);
+    gpio_set_pin_input(A11);
+    gpio_set_pin_input(A12);
+    /*设置按键唤醒休眠*/
+    set_row_and_col_when_sleep();
+    /*拔插USB唤醒*/
+    gpio_set_pin_input(PLUG_IN);
+    palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
+    gpio_set_pin_input(BT_MODE);
+    palEnableLineEvent(BT_MODE, PAL_EVENT_MODE_BOTH_EDGES);
+    gpio_set_pin_input(PRF_MODE);
+    palEnableLineEvent(PRF_MODE, PAL_EVENT_MODE_BOTH_EDGES);
+    
+    setPinInput(encoder_left);
+    setPinInput(encoder_right);
+    palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
+    palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
+    
+    ADC1->CR2 &= ~ADC_CR2_ADON;
+    PWR->CR |= (1 << 0) | (1 << 10) | (1 << 11) | (3 << 18);
+    /* Clear Wake-up flag */
+    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+    /* Request Wait For Interrupt */
+    __WFI();
+    /* Reset SLEEPDEEP bit of Cortex System Control Register */
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+    /*按键唤醒去抖*/
+    key_debounce();
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+    /*时钟初始化*/
+    stm32_clock_init();
+    /*矩阵初始化以及矩阵扫描*/
+    matrix_init();
+    ws2812_init();
+    matrix_scan();
+    adc_init();
+    /*发送心跳包变量*/
+    first_sleep_time = timer_read32();
+    packet_send_time  = 0;
+    /*电池电量检测*/
+    blink_wireless_time         = timer_read32();
+    higher_blink_wireless_time  = timer_read32();
+    wireless_no_operation_time  = timer_read32();
+    /*usb初始化延时*/
+    wakeup_first_sleep_flag = true;
+    wakeup_first_sleep_time = timer_read32();
+    /*一旦进入休眠，之前的恢复出厂将会失效*/
+    variable_init();
+    loop10hz_token      = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
+}
 
-    for(uint8_t x=0; x<MATRIX_COLS; x++)
+//uint8_t Sleep_First_PressFlag = 0;
+//void POWER_EnterSleep_First(void) {
+//    Sleep_First_PressFlag = 1;
+//    sleep_switch_driverflag = 200;
+//    cancel_deferred_exec(loop10hz_token);
+//    usb_disconnect();    //Don't enter SLEEP when USB mode
+//    gpio_disable_init();
+//    palSetLineMode(RENUM,PAL_MODE_INPUT_ANALOG);
+//    if(get_plug_mode() == false)
+//    {
+//        palSetLineMode(A11,PAL_MODE_INPUT_ANALOG);
+//        palSetLineMode(A12,PAL_MODE_INPUT_ANALOG);
+//    }
+//    setPinInput(BLE);
+//    setPinInput(TwoMode);
+//    palEnableLineEvent(BLE, PAL_EVENT_MODE_BOTH_EDGES);
+//    palEnableLineEvent(TwoMode, PAL_EVENT_MODE_BOTH_EDGES);
+//
+//
+//    setPinInput(encoder_left);
+//    setPinInput(encoder_right);
+//    palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
+//    palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
+//#if (DIODE_DIRECTION == ROW2COL)
+//
+//    pin_t col_pins[] = MATRIX_COL_PINS;
+//
+//    for(uint8_t x=0; x<MATRIX_COLS; x++)
+//    {
+//        pin_t pin;
+//        pin = col_pins[x];
+//        if (pin != NO_PIN) 
+//        {
+//            setPinOutput(pin);
+//            writePinLow(pin);
+//        }
+//    }
+//
+//    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
+//   for(uint8_t x=0; x<MATRIX_ROWS; x++)
+//    { 
+//       pin_t pin;
+//       pin = row_pins[x];
+//        if (pin != NO_PIN) 
+//        {
+//            setPinInputHigh(pin);
+//            palEnableLineEvent(pin, PAL_EVENT_MODE_FALLING_EDGE);
+//        }
+//    }
+//   setPinInput(PLUG_IN);
+//   palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
+//#else
+//
+//    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
+//    for(uint8_t x=0; x<MATRIX_ROWS; x++)
+//    { 
+//        pin_t pin;
+//        pin = row_pins[x];
+//        if (pin != NO_PIN) 
+//        {
+//            setPinOutput(pin);
+//            writePinLow(pin);
+//        }
+//    }
+//
+//    const long unsigned int col_pins[] = MATRIX_COL_PINS;
+//    for(uint8_t x=0; x<MATRIX_COLS; x++)
+//    //for(uint8_t x=0; x<9; x++)
+//    {
+//        pin_t pin;
+//        pin = col_pins[x];
+//        setPinInputHigh(pin);
+//        palEnableLineEvent(pin, PAL_EVENT_MODE_BOTH_EDGES);
+//    }
+//#endif
+//
+// 
+//    ADC1->CR2 &= ~ADC_CR2_ADON;   //0.9ma   
+//    //writePinLow(DRIVER_1_EN); 
+//    /* going to anabiosis*/
+//    //chSysLock();
+//    PWR->CR |= (1<<0)|(1<< 10) |(1<< 11)|(3<<18);
+//    /* Clear Wake-up flag */
+//    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
+//
+//    /* Set SLEEPDEEP bit of Cortex System Control Register */
+//    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+//    //}
+//    /* Request Wait For Interrupt */
+//    __WFI();
+//     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+////休眠防抖
+////休眠防抖
+//    key_debounce();
+//    /* Reset SLEEPDEEP bit of Cortex System Control Register */
+//    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+//    setPinInput(BLE);
+//    setPinInput(TwoMode);
+//    setPinOutput(RENUM);
+//    writePinHigh(RENUM);
+//    gpio_init();
+//    matrix_init();
+//    matrix_scan();
+//    stm32_clock_init();
+//    ws2812_init();
+//    adc_init(); 
+//    get_mode();
+//    rgb_wireless_timer = timer_read32();
+//     first_sleep_timer = timer_read32();
+//     packet_send = 0;
+//    //配对超时和回连超时计时清0
+//
+//    blink_ble_24g_timer = 0; //蓝牙回连超时     配对也是这个  
+//    pair_succeed_timer = timer_read32();//重新计时连接时间  
+//    blink_ble_24g_timer = timer_read32(); //重新计时回连时间
+//    flag32.mode_one = 1;
+//    blink_counter  = 0;
+//    ble24G_counter = 0;
+//    power_counter = 0;   
+//    loop10hz_token = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
+//  }
+
+
+/*二级休眠*/
+void Second_Level_Sleep(void) {
+    gpio_write_pin_low(EN_BACKLIT);
+    cancel_deferred_exec(loop10hz_token);
+    kb_mode        = KB_MODE_DEFAULT;
+    WIRELESS_STOP();
+    wait_ms(10);
+    usb_disconnect(); // Don't enter SLEEP when USB mode
+    /*晶振*/
+    palSetLineMode(OSC_IN,PAL_MODE_INPUT_ANALOG);
+    palSetLineMode(OSC_OUT,PAL_MODE_INPUT_ANALOG);
+    /*USB的DP、DN*/
+    gpio_write_pin_low(RENUM_PIN);
+    gpio_set_pin_input(A11);
+    gpio_set_pin_input(A12);
+    /*设置按键唤醒休眠*/
+    set_row_and_col_when_sleep();
+    /*拔插USB唤醒*/
+    gpio_set_pin_input(PLUG_IN);
+    palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
+    gpio_set_pin_input(BT_MODE);
+    palEnableLineEvent(BT_MODE, PAL_EVENT_MODE_BOTH_EDGES);
+    gpio_set_pin_input(PRF_MODE);
+    palEnableLineEvent(PRF_MODE,PAL_EVENT_MODE_BOTH_EDGES);
+    setPinInput(encoder_left);
+    setPinInput(encoder_right);
+    palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
+    palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
+    
+    ADC1->CR2 &= ~ADC_CR2_ADON;
+    /* Clear Wake-up flag */
+    PWR->CR |= (1 << 0) | (1 << 10) | (1 << 11) | (3 << 18);
+    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
+    /* Set SLEEPDEEP bit of Cortex System Control Register */
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+    /* Request Wait For Interrupt */
+    __WFI();
+    /* Reset SLEEPDEEP bit of Cortex System Control Register */
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+    /*按键唤醒消抖*/
+    key_debounce();
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+    stm32_clock_init();
+    init_usb_driver(&USB_DRIVER); // Should not enter SLEEP when USB mode
+    matrix_init();
+    ws2812_init();
+    adc_init();
+    gpio_write_pin_high(RENUM_PIN);
+    /*发送心跳包变量*/
+    first_sleep_time = timer_read32();
+    packet_send_time  = 0;
+    /*超时会重新休眠的变量*/
+    blink_wireless_time         = timer_read32();
+    higher_blink_wireless_time  = timer_read32();
+    wireless_no_operation_time  = timer_read32();
+    /*一旦进入休眠，之前的恢复出厂将会失效*/
+    variable_init();
+    loop10hz_token   = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
+}
+
+
+//void POWER_EnterSleep(void) {
+//    sleep_switch_driverflag = 200;
+//    cancel_deferred_exec(loop10hz_token);
+//    WIRELESS_STOP();
+//    wait_ms(10);
+//    usb_disconnect();    //Don't enter SLEEP when USB mode
+//    gpio_disable_init(); 
+//    palSetLineMode(RENUM,PAL_MODE_INPUT_ANALOG);
+//    if(kb_mode == KB_MODE_24G)
+//    wakeup_pack24G = 1;
+//    
+//    if(get_plug_mode() == false)
+//    {
+//        palSetLineMode(A11,PAL_MODE_INPUT_ANALOG);
+//        palSetLineMode(A12,PAL_MODE_INPUT_ANALOG);
+//    }
+////开关设置
+//
+//    setPinInput(BLE);
+//    setPinInput(TwoMode);
+//    palEnableLineEvent(BLE, PAL_EVENT_MODE_BOTH_EDGES);
+//    palEnableLineEvent(TwoMode, PAL_EVENT_MODE_BOTH_EDGES);
+//    //旋钮唤醒
+//    setPinInput(encoder_left);
+//    setPinInput(encoder_right);
+//    palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
+//    palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
+//#if (DIODE_DIRECTION == ROW2COL)
+//
+//    pin_t col_pins[] = MATRIX_COL_PINS;
+//
+//    for(uint8_t x=0; x<MATRIX_COLS; x++)
+//    {
+//        pin_t pin;
+//        pin = col_pins[x];
+//        if (pin != NO_PIN) 
+//        {
+//            setPinOutput(pin);
+//            writePinLow(pin);
+//        }
+//    }
+//
+//    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
+//    for(uint8_t x=0; x<MATRIX_ROWS; x++)
+//    { 
+//        pin_t pin;
+//        pin = row_pins[x];
+//        if (pin != NO_PIN) 
+//        {
+//            setPinInputHigh(pin);
+//            palEnableLineEvent(pin, PAL_EVENT_MODE_FALLING_EDGE);
+//        }
+//    }
+//   palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
+//#else
+//    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
+//    for(uint8_t x=0; x<MATRIX_ROWS; x++)
+//    { 
+//        pin_t pin;
+//        pin = row_pins[x];
+//        if (pin != NO_PIN) 
+//        {
+//            setPinOutput(pin);
+//            writePinLow(pin);
+//        }
+//    }
+//
+//    const long unsigned int col_pins[] = MATRIX_COL_PINS;
+//    for(uint8_t x=0; x<MATRIX_COLS; x++)
+//    //for(uint8_t x=0; x<9; x++)
+//    {
+//        pin_t pin;
+//        pin = col_pins[x];
+//        setPinInputHigh(pin);
+//        palEnableLineEvent(pin, PAL_EVENT_MODE_BOTH_EDGES);
+//    }
+//#endif
+//
+// 
+//    ADC1->CR2 &= ~ADC_CR2_ADON;   //0.9ma
+//    
+//    //writePinLow(DRIVER_1_EN); 
+//    /* going to anabiosis*/
+//    //chSysLock();
+//    PWR->CR |= (1<<0)|(1<< 10) |(1<< 11)|(3<<18);
+//    /* Clear Wake-up flag */
+//    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
+//
+//    /* Set SLEEPDEEP bit of Cortex System Control Register */
+//    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+//    //}
+//    /* Request Wait For Interrupt */
+//    __WFI();
+//     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+//     //增加特殊按键消抖处理
+//
+////休眠防抖
+//
+//    key_debounce();
+//    /* Reset SLEEPDEEP bit of Cortex System Control Register */
+//    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+//
+//
+//    setPinInput(BLE);
+//    setPinInput(TwoMode);   
+//    setPinOutput(RENUM);
+//    writePinHigh(RENUM);
+//    gpio_init();
+//    stm32_clock_init();
+//    init_usb_driver(&USB_DRIVER); //Should not enter SLEEP when USB mode                //Should not enter SLEEP when USB mode
+//    matrix_init();
+//    ws2812_init();
+//    adc_init(); 
+//
+//
+//     get_mode();
+//    if(kb_mode == KB_MODE_BLE)
+//    {
+//        WIRELESS_START(last_wireless_mode);
+//    }
+//    if(kb_mode == KB_MODE_24G)
+//    {
+//        WIRELESS_START(4);
+//    }
+//    rgb_wireless_timer = timer_read32();
+//    first_sleep_timer = timer_read32();
+//    packet_send = 0;
+//    //配对超时和回连超时计时清0
+//    blink_ble_24g_timer = 0; //蓝牙回连超时     配对也是这个  
+//    pair_succeed_timer = timer_read32();
+//    //重新计时连接时间  
+//    blink_ble_24g_timer = timer_read32(); //重新计时回连时间
+//    flag32.mode_one = 1;
+//    blink_counter  = 0;
+//    ble24G_counter = 0;
+//    //低电
+//    ble24G_period = 5;
+//    pair_timeout = 20000;
+//  //  BT_Switch_Flag = 1;
+//    power_counter = 0;      
+//    loop10hz_token = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
+// }
+
+
+
+ void sleep_mode(void) {
+     
+     /*未连接是灯闪烁:快闪60，慢闪20*/
+     if (kb_mode != KB_MODE_USB) {
+         if (timer_elapsed32(blink_wireless_time) > 20000) {
+             if ((blink_period == 5) && (wireless_connect_flag == false)) {
+                 Second_Level_Sleep();
+             }
+         }
+         if (timer_elapsed32(higher_blink_wireless_time) > 60000) {
+             if ((blink_period == 2) && (wireless_connect_flag == false)) {
+                 Second_Level_Sleep();
+             }
+         }
+     }
+     /*有线跟随休眠*/
+     if (USB_DRIVER.state == USB_SUSPENDED && kb_mode == KB_MODE_USB) {
+         if (usb_suspend_flag == 0) {
+             usb_suspend_time = timer_read32();
+             usb_suspend_flag = 1; /*USB现在是SUSPENED的状态*/
+         }
+     } else if (USB_DRIVER.state == USB_ACTIVE && kb_mode == KB_MODE_USB) {
+         usb_suspend_flag = 0;   /*USB是ACTIVE的状态*/
+     } else {
+         usb_suspend_flag = 2;   /*USB是ACTIVE和SUSPENED之外的状态*/
+     }
+     if (timer_elapsed32(usb_suspend_time) > 500) {
+         if (get_plug_mode() == true && kb_mode == KB_MODE_USB) {
+             if (usb_suspend_flag == 1) {
+                 usb_suspend_power_down();
+                 usb_wakeup_send_code_flag = true;
+             }
+         }
+     }
+     /*2.4G跟随休眠*/
+     if (suspend == true) {
+         Second_Level_Sleep();
+         sleep_24G_flag = true;
+         suspend        = false;
+     }
+     /*无线连接上了无操作超时*/
+     if (wireless_connected) {
+         if (timer_elapsed32(wireless_no_operation_time) > RGB_MATRIX_WIRELESS_TIME ) {
+             config_time_alarm();
+             First_Level_Sleep();
+             exti_stop_config();
+             /*如果唤醒源不是按键唤醒，才进去下面*/
+             if (interrupt_source_flag) {
+                 interrupt_source_flag = false;
+                 wakeup_first_sleep_flag   = false;
+                 Second_Level_Sleep();
+             } else {
+                 first_sleep_flag = true;
+                 ble_connect_flag = false;
+                 gpio_write_pin_high(RENUM_PIN);
+             }
+         }
+     }
+     /*一级休眠唤醒0.1s后再初始化usb_driver,初始化过程中有延时，防止吞键*/
+     if (timer_elapsed32(wakeup_first_sleep_time) > 100) {
+         if (wakeup_first_sleep_flag == true) {
+             init_usb_driver(&USB_DRIVER);
+             wakeup_first_sleep_flag = false;
+         }
+     }
+     /*低电量软关机*/
+     if ((temp == 0) && (batt_charge_status == batt_no_charge)) {
+         Second_Level_Sleep();
+     }
+ }
+
+
+
+/*蓝牙发送电量*/
+void ble_send_battery(void) {
+    /*没有按键被按下超过一秒钟，keyboard_no_idle_flag这个标志位才会是 fasle*/
+    if (timer_elapsed32(keyboard_idle_time) >= 1000) {
+        keyboard_no_idle_flag = false;
+    }
+    /*蓝牙模式下发送电池电量*/
+    if (kb_mode == KB_MODE_BLE && wireless_connected) // no battery info when 24G or connecting
     {
-        pin_t pin;
-        pin = col_pins[x];
-        if (pin != NO_PIN)
+        if (ble_connect_flag == false) /*蓝牙断连后，又重新连上*/
         {
-            setPinOutput(pin);
-            writePinLow(pin);
-
+            battery_level_report_flag = true; /*允许发送电池电量标志位*/
+            ble_connect_flag          = true;
+        }
+        if ((battery_level_report_flag == true) && (keyboard_no_idle_flag == false) && (battery_first_test_flag == true)) {
+            sc_ble_battary(temp);
+            battery_level_report_flag = false;
         }
     }
+}
 
 
+
+
+
+
+uint8_t  isr_specal_Trig;
+
+/*休眠时需要设置键盘的row和col脚*/
+void set_row_and_col_when_sleep(void) {
+#if (DIODE_DIRECTION == ROW2COL)
+    
+    pin_t col_pins[] = MATRIX_COL_PINS;
+
+    for (uint8_t x = 0; x < MATRIX_COLS; x++) {
+        pin_t pin;
+        pin = col_pins[x];
+        if (pin != NO_PIN) {
+            setPinOutput(pin);
+            gpio_write_pin_low(pin);
+        }
+    }
     const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-    for(uint8_t x=0; x<MATRIX_ROWS; x++)
-    {
+    for (uint8_t x = 0; x < MATRIX_ROWS; x++) {
         pin_t pin;
         pin = row_pins[x];
-        if (pin != NO_PIN)
-        {
-            setPinInputHigh(pin);
+        if (pin != NO_PIN) {
+            gpio_set_pin_input_high(pin);
             palEnableLineEvent(pin, PAL_EVENT_MODE_BOTH_EDGES);
         }
     }
 #else
 
     const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-    for(uint8_t x=0; x<MATRIX_ROWS; x++)
-    {
+    for (uint8_t x = 0; x < MATRIX_ROWS; x++) {
         pin_t pin;
         pin = row_pins[x];
-        if (pin != NO_PIN)
-        {
+        if (pin != NO_PIN) {
             setPinOutput(pin);
-            writePinLow(pin);
+            gpio_write_pin_low(pin);
         }
     }
 
     const long unsigned int col_pins[] = MATRIX_COL_PINS;
-    for(uint8_t x=0; x<MATRIX_COLS; x++)
-    //for(uint8_t x=0; x<9; x++)
+    for (uint8_t x = 0; x < MATRIX_COLS; x++)
+    // for(uint8_t x=0; x<9; x++)
     {
-        pin_t pin; 
+        pin_t pin;
         pin = col_pins[x];
-        setPinInputHigh(pin);
+        gpio_set_pin_inputHigh(pin);
         palEnableLineEvent(pin, PAL_EVENT_MODE_BOTH_EDGES);
     }
 #endif
-   ADC1->CR2 &= ~ADC_CR2_ADON;
-    _pal_lld_enablepadevent(0,18,PAL_EVENT_MODE_BOTH_EDGES);
-
-    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
-    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-    __WFI();
-     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-    #ifdef  mk637_special_isr
-    special_key_debounce();
-    #endif
-//休眠防抖
-//休眠防抖
-    swif_debounce();
-    /* Reset SLEEPDEEP bit of Cortex System Control Register */
-    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-    EXTI->IMR &= ~(1<<18);
-    EXTI->EMR &= ~(1<<18);
-    EXTI->RTSR &= ~(1<<18);
-    EXTI->FTSR &= ~(1<<18);
-    EXTI->PR = (1<<18);
-    setPinInput(BLE);
-    setPinInput(TwoMode);
-    stm32_clock_init();
-    clear_keyboard();
-    send_keyboard_report();
-    usbWakeupHost(&USB_DRIVER);  //解决休眠无法唤醒的问题
-    restart_usb_driver(&USB_DRIVER);
-    init_usb_driver(&USB_DRIVER); //Should not enter SLEEP when USB mode
-    matrix_init();
-    ws2812_init();
-    adc_init();
-    gpio_init();
-    get_mode();
-    if(kb_mode == KB_MODE_BLE)
-    {
-        WIRELESS_START(last_wireless_mode);
-    }
-    if(kb_mode == KB_MODE_24G)
-    {
-        WIRELESS_START(4);
-    }
-
-    
-
-    usb_suspend_flag = 2;
-    power_counter = 0;   
-    loop10hz_token = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
 }
 
-
-
-uint8_t Sleep_First_PressFlag = 0;
-void POWER_EnterSleep_First(void) {
-    Sleep_First_PressFlag = 1;
-    sleep_switch_driverflag = 200;
-    cancel_deferred_exec(loop10hz_token);
-    usb_disconnect();    //Don't enter SLEEP when USB mode
-    gpio_disable_init();
-    palSetLineMode(RENUM,PAL_MODE_INPUT_ANALOG);
-    if(get_plug_mode() == false)
-    {
-        palSetLineMode(A11,PAL_MODE_INPUT_ANALOG);
-        palSetLineMode(A12,PAL_MODE_INPUT_ANALOG);
-    }
-    setPinInput(BLE);
-    setPinInput(TwoMode);
-    palEnableLineEvent(BLE, PAL_EVENT_MODE_BOTH_EDGES);
-    palEnableLineEvent(TwoMode, PAL_EVENT_MODE_BOTH_EDGES);
-
-
-    setPinInput(encoder_left);
-    setPinInput(encoder_right);
-    palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
-    palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
-#if (DIODE_DIRECTION == ROW2COL)
-
-    pin_t col_pins[] = MATRIX_COL_PINS;
-
-    for(uint8_t x=0; x<MATRIX_COLS; x++)
-    {
-        pin_t pin;
-        pin = col_pins[x];
-        if (pin != NO_PIN) 
-        {
-            setPinOutput(pin);
-            writePinLow(pin);
-        }
-    }
-
-    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-   for(uint8_t x=0; x<MATRIX_ROWS; x++)
-    { 
-       pin_t pin;
-       pin = row_pins[x];
-        if (pin != NO_PIN) 
-        {
-            setPinInputHigh(pin);
-            palEnableLineEvent(pin, PAL_EVENT_MODE_FALLING_EDGE);
-        }
-    }
-   setPinInput(PLUG_IN);
-   palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
-#else
-
-    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-    for(uint8_t x=0; x<MATRIX_ROWS; x++)
-    { 
-        pin_t pin;
-        pin = row_pins[x];
-        if (pin != NO_PIN) 
-        {
-            setPinOutput(pin);
-            writePinLow(pin);
-        }
-    }
-
-    const long unsigned int col_pins[] = MATRIX_COL_PINS;
-    for(uint8_t x=0; x<MATRIX_COLS; x++)
-    //for(uint8_t x=0; x<9; x++)
-    {
-        pin_t pin;
-        pin = col_pins[x];
-        setPinInputHigh(pin);
-        palEnableLineEvent(pin, PAL_EVENT_MODE_BOTH_EDGES);
-    }
-#endif
-
- 
-    ADC1->CR2 &= ~ADC_CR2_ADON;   //0.9ma   
-    //writePinLow(DRIVER_1_EN); 
-    /* going to anabiosis*/
-    //chSysLock();
-    PWR->CR |= (1<<0)|(1<< 10) |(1<< 11)|(3<<18);
-    /* Clear Wake-up flag */
-    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
-
-    /* Set SLEEPDEEP bit of Cortex System Control Register */
-    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-    //}
-    /* Request Wait For Interrupt */
-    __WFI();
-     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-     #ifdef  mk637_special_isr
-    special_key_debounce();
-#endif
 //休眠防抖
-//休眠防抖
-    swif_debounce();
-    /* Reset SLEEPDEEP bit of Cortex System Control Register */
-    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-    setPinInput(BLE);
-    setPinInput(TwoMode);
-    setPinOutput(RENUM);
-    writePinHigh(RENUM);
-    gpio_init();
-    matrix_init();
-    matrix_scan();
-    stm32_clock_init();
-    ws2812_init();
-    adc_init(); 
-    get_mode();
-    rgb_wireless_timer = timer_read32();
-     first_sleep_timer = timer_read32();
-     packet_send = 0;
-    //配对超时和回连超时计时清0
-
-    blink_ble_24g_timer = 0; //蓝牙回连超时     配对也是这个  
-    pair_succeed_timer = timer_read32();//重新计时连接时间  
-    blink_ble_24g_timer = timer_read32(); //重新计时回连时间
-    flag32.mode_one = 1;
-    blink_counter  = 0;
-    ble24G_counter = 0;
-    power_counter = 0;   
-    loop10hz_token = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
-  }
-
-
-
-
-
-void POWER_EnterSleep(void) {
-    sleep_switch_driverflag = 200;
-    cancel_deferred_exec(loop10hz_token);
-    WIRELESS_STOPOWER();
-    wait_ms(10);
-    usb_disconnect();    //Don't enter SLEEP when USB mode
-    gpio_disable_init(); 
-    palSetLineMode(RENUM,PAL_MODE_INPUT_ANALOG);
-    if(kb_mode == KB_MODE_24G)
-    wakeup_pack24G = 1;
-    
-    if(get_plug_mode() == false)
-    {
-        palSetLineMode(A11,PAL_MODE_INPUT_ANALOG);
-        palSetLineMode(A12,PAL_MODE_INPUT_ANALOG);
-    }
-//开关设置
-
-    setPinInput(BLE);
-    setPinInput(TwoMode);
-    palEnableLineEvent(BLE, PAL_EVENT_MODE_BOTH_EDGES);
-    palEnableLineEvent(TwoMode, PAL_EVENT_MODE_BOTH_EDGES);
-    //旋钮唤醒
-    setPinInput(encoder_left);
-    setPinInput(encoder_right);
-    palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
-    palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
-#if (DIODE_DIRECTION == ROW2COL)
-
-    pin_t col_pins[] = MATRIX_COL_PINS;
-
-    for(uint8_t x=0; x<MATRIX_COLS; x++)
-    {
-        pin_t pin;
-        pin = col_pins[x];
-        if (pin != NO_PIN) 
-        {
-            setPinOutput(pin);
-            writePinLow(pin);
-        }
-    }
-
-    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-    for(uint8_t x=0; x<MATRIX_ROWS; x++)
-    { 
-        pin_t pin;
-        pin = row_pins[x];
-        if (pin != NO_PIN) 
-        {
-            setPinInputHigh(pin);
-            palEnableLineEvent(pin, PAL_EVENT_MODE_FALLING_EDGE);
-        }
-    }
-   palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
-#else
-    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-    for(uint8_t x=0; x<MATRIX_ROWS; x++)
-    { 
-        pin_t pin;
-        pin = row_pins[x];
-        if (pin != NO_PIN) 
-        {
-            setPinOutput(pin);
-            writePinLow(pin);
-        }
-    }
-
-    const long unsigned int col_pins[] = MATRIX_COL_PINS;
-    for(uint8_t x=0; x<MATRIX_COLS; x++)
-    //for(uint8_t x=0; x<9; x++)
-    {
-        pin_t pin;
-        pin = col_pins[x];
-        setPinInputHigh(pin);
-        palEnableLineEvent(pin, PAL_EVENT_MODE_BOTH_EDGES);
-    }
-#endif
-
- 
-    ADC1->CR2 &= ~ADC_CR2_ADON;   //0.9ma
-    
-    //writePinLow(DRIVER_1_EN); 
-    /* going to anabiosis*/
-    //chSysLock();
-    PWR->CR |= (1<<0)|(1<< 10) |(1<< 11)|(3<<18);
-    /* Clear Wake-up flag */
-    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
-
-    /* Set SLEEPDEEP bit of Cortex System Control Register */
-    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-    //}
-    /* Request Wait For Interrupt */
-    __WFI();
-     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-     //增加特殊按键消抖处理
-
-#ifdef  mk637_special_isr
-    special_key_debounce();
-#endif
-//休眠防抖
-
-    swif_debounce();
-    /* Reset SLEEPDEEP bit of Cortex System Control Register */
-    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-
-
-    setPinInput(BLE);
-    setPinInput(TwoMode);   
-    setPinOutput(RENUM);
-    writePinHigh(RENUM);
-    gpio_init();
-    stm32_clock_init();
-    init_usb_driver(&USB_DRIVER); //Should not enter SLEEP when USB mode                //Should not enter SLEEP when USB mode
-    matrix_init();
-    ws2812_init();
-    adc_init(); 
-
-
-     get_mode();
-    if(kb_mode == KB_MODE_BLE)
-    {
-        WIRELESS_START(last_wireless_mode);
-    }
-    if(kb_mode == KB_MODE_24G)
-    {
-        WIRELESS_START(4);
-    }
-    rgb_wireless_timer = timer_read32();
-    first_sleep_timer = timer_read32();
-    packet_send = 0;
-    //配对超时和回连超时计时清0
-    blink_ble_24g_timer = 0; //蓝牙回连超时     配对也是这个  
-    pair_succeed_timer = timer_read32();
-    //重新计时连接时间  
-    blink_ble_24g_timer = timer_read32(); //重新计时回连时间
-    flag32.mode_one = 1;
-    blink_counter  = 0;
-    ble24G_counter = 0;
-    //低电
-    ble24G_period = 5;
-    pair_timeout = 20000;
-  //  BT_Switch_Flag = 1;
-    power_counter = 0;      
-    loop10hz_token = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
- }
-
-
-
-uint8_t sleep_first_flag;
-uint16_t testime_flag;
-void sleep_mode(void)
-{
-
-    //软关机休眠
-      if((false == get_plug_mode() ) && (temp == 0 ))
-      {
-
-            POWER_EnterSleep(); 
-            BT_24G_Shine = 0;   
-      }
-   //回连超时休眠
-    if (!wireless_connected  &&((kb_mode == KB_MODE_BLE ) || (kb_mode == KB_MODE_24G) ) ) 
-    {
-
-        if(timer_elapsed32(blink_ble_24g_timer) >= pair_timeout)
-        {
-            //增加滅燈操作
-            rgblight_set_layer_state(6,false);
-            rgblight_set_layer_state(3,false);
-            rgblight_set_layer_state(4,false);
-            rgblight_set_layer_state(5,false);
-            rgblight_set_layer_state(7,false);
-            rgblight_set_layer_state(8,false);
-            POWER_EnterSleep();  
-            BT_24G_Shine = 0;  
-        }
-    }
-
-
-    if (wireless_connected)   //DO IT WHEN WIRELESS MODE
-    {
-//测试如果改成10分钟  600s   580s   
-        if(timer_elapsed32(first_sleep_timer) >= 8000  && (packet_send < 15) ) 
-        {
-
-            first_sleep_timer = timer_read32();
-            packet_send++;
-            for (int i=0;i<5;i++)
-            {
-                uart_write(0x00);
-            }       
-
-        }
-
-        if(timer_elapsed32(rgb_wireless_timer) > RGB_MATRIX_WIRELESS_TIME)
-        {
-         
-            config_time_alarm();
-            POWER_EnterSleep_First();
-            BT_24G_Shine = 0;  
-            exti_stop_config();
-            //如果唤醒源不是按键唤醒，才进去下面
-            if(exti_flag)
-            {
-                exti_flag = 0;
-               POWER_EnterSleep();
-               BT_24G_Shine = 0;  
-            }
-            else
-            {
-
-              gpio_init();
-              sleep_first_flag = 1;
-            } 
-        }  
-    }
-
-
-
-    //有线跟随休眠
-    if(USB_DRIVER.state == USB_SUSPENDED && kb_mode == KB_MODE_USB)
-    { 
-        if(usb_suspend_flag == 0)   //USB之前时ACTIVE的状态
-        {
-            usb_suspend_time = timer_read32();
-            usb_suspend_flag = 1;   //USB之前是ACTIVE,现在是SUSPENED
-        }
-
-    }
-    else if(USB_DRIVER.state == USB_ACTIVE && kb_mode == KB_MODE_USB)
-    {
-        usb_suspend_flag = 0;   //USB是ACTIVE的状态
-      //   usb_suspend_time = timer_read32();   
-    }  
-    else
-    {
-        usb_suspend_flag = 2;   
-    }
-
-    if(timer_elapsed32(usb_suspend_time) > 500)
-    {
-       if(get_plug_mode() == true && kb_mode == KB_MODE_USB )
-        {
-            if(usb_suspend_flag == 1)
-            {
-     
-                usb_suspend_power_down(); 
-                BT_24G_Shine = 0;  
-                usb_wakeup_flag = true;
-            }
-        }
-    }
-
-    
-    if((blink_counter == 5) && (Sleep_First_PressFlag))
-    {
-        Sleep_First_PressFlag = 0;
-        init_usb_driver(&USB_DRIVER); //Should not enter SLEEP when USB mode
-    } 
-
-
-
-
-
-
-
-
-
-
-//   if (get_plug_mode() == true && kb_mode == KB_MODE_USB)
-//   {
-
-//      if (timer_elapsed32(usb_suspend_time) > 500) {
-//          if (usb_suspend_flag == 1) {
-//                 // usb_suspend_power_down();
-//                 sleep_shutled_flag = 1;
-//             }
-//      }
-//      if (timer_elapsed32(usb_suspend_time) > 1500) {
-//          if (usb_suspend_flag == 1) {
-//                 usb_suspend_power_down();
-//                 sleep_shutled_flag = 0;
-//          //       rgblight_set_layer_state(1,false);
-//                 // ws2812_init();
-//                 // rgblight_set_layer_state(4,false);
-//             }
-//      }
-//   }
-
-
-
-    //2.4G跟随休眠
-    if(suspend == true)
-    {
- 
-       POWER_EnterSleep(); 
-         BT_24G_Shine = 0;   
-       suspend = false;
-    }
-
-
-}
-
-
-
-
-
-void adc_test(void)
-{
-
-    if((timer_elapsed32(battery_test_time) > 30000))
-    {
-        adc_value = get_adc_value();    //获取adc值
-        adc_vref =  get_adc_vref();
-        battery_value = (adc_value*1764/adc_vref);
-        temp = batt_level();
-        battery_test_time = timer_read32();
-
-
-
-    //电量一点点增加或者减少
-
-        if(get_plug_mode() == true)     //插usb
-        {
-            if(temp > last_temp +1)     //暴涨超2%
-            {
-                second_temp = temp;
-                if(last_temp != second_temp)
-                {
-                    last_temp++;
-                    temp = last_temp;
-                }
-            }
-            else if(last_temp == temp || temp == last_temp +1)  //电量正常不加或是只增长1%
-            {
-                last_temp = temp;
-            }
-        }
-        else
-        {
-            if(last_temp == temp || temp == last_temp -1)   //电量正常不减少或是只减少1%
-            {
-                last_temp = temp;
-            }
-            else if(temp < last_temp -1)    //暴跌超2%
-            {
-                second_temp = temp;
-                if(last_temp != second_temp)
-                {
-                    last_temp--;
-                    temp = last_temp;
-                }
-            }
-            else if(temp > last_temp)   //这是开灯测的电量，突然关灯会导致adc值暴涨
-            {
-                temp = last_temp;
-            }
-        }
-    }
-}
-void ble_send_batt(void)
-{
-    if(kb_mode==KB_MODE_BLE && wireless_connected) //no battery info when 24G or connecting
-    {
-        if(ble_flag == 0)
-        {             
-
-             battery_Flag = 1;
-            if(!keyboard_Idle)
-            {
-              battery_Flag = 0;
-              sc_ble_battary(temp); 
-            }
-                       
-
-            ble_flag = 1;
-            ble_bat_timer = timer_read32();
-        }
-        
-        if(timer_elapsed32(ble_bat_timer) > 30000)
-        {
-            if(get_plug_mode() == true)     //插usb
-            {
-                if(temp > last_temp +1)     //暴涨超2%
-                {
-                    second_temp = temp;
-                    if(last_temp != second_temp)
-                    {
-                        last_temp++;
-                        temp = last_temp;
-                    }
-                }
-                else if(last_temp == temp || temp == last_temp +1)  //电量正常不加或是只增长1%
-                {
-                    last_temp = temp;
-                }
-            }
-            else
-            {
-                if(last_temp == temp || temp == last_temp -1)   //电量正常不减少或是只减少1%
-                {
-                    last_temp = temp;
-                }
-                else if(temp < last_temp -1)    //暴跌超2%
-                {
-                    second_temp = temp;
-                    if(last_temp != second_temp)
-                    {
-                        last_temp--;
-                        temp = last_temp;
-                    }
-                }
-                else if(temp > last_temp)   //这是开灯测的电量，突然关灯会导致adc值暴涨
-                {
-                    temp = last_temp;
-                }
-            }
-             battery_Flag = 1;
-            if(!keyboard_Idle)
-            {
-              battery_Flag = 0;
-              sc_ble_battary(temp); 
-            }
-
-            ble_bat_timer = timer_read32();
-        }       
-    }
-}
-
-
-
-
-
-static uint16_t count_flag;
-uint8_t Rtc_Config_Api(void)
-{
-   rcu_backup_clock_Enable();//备份区域的时钟使能
-   rcu_power_clock_Enable();//电源管理时钟使能
-   backup_write_Enable();//备份区允许访问
-  // bkp_reset();//备份域复位
-   rcu_inlowclock_on();//使能内部低速时钟
- //  wait_inlowclock_sta();//等待内部时钟稳定
-   while(!(RCC->CSR  & RCC_BDCR_LSERDY) &&  count_flag<250)
-   {
-     count_flag++;
-     wait_ms(10); 
-   }
-   if(count_flag >=250)
-   {
-    return 1;
-   }
-   rcu_clock_source();  //RTC时钟源选择
-   RCU_Clock_enable();//使能RTC时钟
-   rtc_register_sync_wait();//等待寄存器域APB1时钟同步
-    RTC->CRH |= RTC_CRH_ALRIE;
-    while(!(RTC->CRL & RTC_CRL_RTOFF));  //RTC operation OFF
-    RTC->CRL |= RTC_CRL_CNF;       //Configuration Flag  
-    RTC->CRL |= RTC_CRL_CNF;
-    RTC->PRLL =  0x9C3F;//0x9C3F//0x9C3F;//0x9C3F;  //RTC Prescaler Reload Value Low 
-    RTC->CRL &= ~RTC_CRL_CNF;       //clear reset Flag
-    while(!(RTC->CRL & RTC_CRL_RTOFF));  //RTC operation OFF
-    rcu_backup_clock_Enable();//备份区域的时钟使能
-    rcu_power_clock_Enable();//电源管理时钟使能
-    backup_write_Enable();//备份区允许访问
-    RTC->CRL |= RTC_CRL_CNF;       //Configuration Flag  
-    RTC->CNTL = 0x00;
-    RTC->CRL &= ~RTC_CRL_CNF; 
-    while(!(RTC->CRL & RTC_CRL_RTOFF));  //RTC operation OFF
-    rcu_backup_clock_Enable();//备份区域的时钟使能
-    rcu_power_clock_Enable();//电源管理时钟使能
-    backup_write_Enable();//备份区允许访问
-    RTC->CRL |= RTC_CRL_CNF;       //Configuration Flag  
-    RTC->ALRH = 0;
-    RTC->ALRL = Second_level_sleeptime;//0x483;//0x483;//5分钟//0x474;//0x4b0;   //时间时15s
-    RTC->CRL &= ~RTC_CRL_CNF; 
-    while(!(RTC->CRL & RTC_CRL_RTOFF));  //RTC operation OFF 
-    RTC->CRL &= ~RTC_CRL_CNF;
-    exti_stop_config();
-    return 0;
-}
- 
-
-
-uint8_t  isr_specal_Trig;
-//休眠防抖
-void swif_debounce(void)
-{
-    uint8_t isr_source[MATRIX_ROWS];
-    uint8_t i;
+/*按键休眠防抖*/
+void key_debounce(void) {
+    uint8_t                 isr_source[MATRIX_ROWS];
+    uint8_t                 i;
     const long unsigned int row_pins[] = MATRIX_ROW_PINS;
     //休眠防抖处理,前提是中断源是按键唤醒
-    if(isr_Trig)
-    {
-        while(1)
-        {         
-            wait_ms(5); 
-            //读6次row口的电平
-            for(uint8_t j = 0; j< 10; j++)
-            {
-                for(i = 0; i < MATRIX_ROWS; i++)
-                {     
+    if (interrupt_source_flag) {
+        while (1) {
+            wait_ms(3);
+            //读10次row口的电平
+            for (uint8_t j = 0; j < 10; j++) {
+                for (i = 0; i < MATRIX_ROWS; i++) {
                     isr_source[i] = readPin(row_pins[i]);
-                    if(!isr_source[i])
-                    break;
+                    if (!isr_source[i]) break;
                 }
-                if(i < MATRIX_ROWS)   
-                {
+                if (i < MATRIX_ROWS) {
                     break;
                 }
             }
-
-
-            if(i < MATRIX_ROWS)   
-            {
-                break;
-            }
-            else
-            {
-                pin_t col_pins[] = MATRIX_COL_PINS;
-                for(uint8_t x=0; x<MATRIX_COLS; x++)
-                {
-                    pin_t pin;
-                    pin = col_pins[x];
-                    if (pin != NO_PIN) 
-                    {
-                        setPinOutput(pin);
-                        writePinLow(pin);
-                    }
-                }
-
-             
-                for(uint8_t x=0; x<MATRIX_ROWS; x++)
-                { 
-                    pin_t pin;
-                    pin = row_pins[x];
-                    if (pin != NO_PIN) 
-                    {
-                        setPinInputHigh(pin);
-                        palEnableLineEvent(pin, PAL_EVENT_MODE_FALLING_EDGE);
-                    }
-                }
-                PWR->CR |= (1<<0)|(1<< 10) |(1<< 11)|(3<<18);
+            if (i >= MATRIX_ROWS) {
+                set_row_and_col_when_sleep();
+                PWR->CR |= (1 << 0) | (1 << 10) | (1 << 11) | (3 << 18);
                 PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
                 SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
                 __WFI();
                 SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-
-            }    
+            } else {
+                break;
+            }
         }
-          //  test_count = 100;
     }
- 
-    EXTI->IMR  &= ~0xffff;   
-    EXTI->EMR  &= ~0xffff;
-    EXTI->RTSR &= ~0xffff;
-    EXTI->FTSR &= ~0xffff;
-    isr_Trig = 0;
+    /*关闭0~15号中断线*/
+    EXTI->IMR   &= ~0xFFFF;
+    EXTI->EMR   &= ~0xFFFF;
+    EXTI->RTSR  &= ~0xFFFF;
+    EXTI->FTSR  &= ~0xFFFF;
+    EXTI->PR    = 0xFFFF;
+    interrupt_source_flag = false;
 }
 
 

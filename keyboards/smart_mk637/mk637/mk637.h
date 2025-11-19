@@ -64,20 +64,6 @@ typedef struct
 
 
 
-
-
-enum kb_mode_t {
-  KB_MODE_USB=0,
-  KB_MODE_BLE,
-  KB_MODE_24G,
-  KB_MODE_DEFALT
-};
-
-
-void swif_debounce(void);
-uint8_t Rtc_Config_Api(void);
-void adc_test(void);
-void ble_send_batt(void);
 void POWER_EnterSleep_First(void);
 void POWER_EnterSleep(void);
 void sleep_mode(void);
@@ -85,5 +71,22 @@ void gpio_disable_init(void);
 void gpio_init(void);
 void three_mode(void);
 bool get_plug_mode(void);          
-enum kb_mode_t get_kb_mode(void);  
-
+enum kb_mode_t get_kb_mode(void);
+bool get_plug_mode(void);
+void communicate_mode_toggle(void);
+void avoid_hold_key_when_usb_wakeup(void);         
+void ble_send_battery(void);
+void key_pressd_update_heartbeat_time(void);
+void toggle_layer(void);
+void key_nkro_toggle(void);
+void mode_indicator_light_init(void);
+void wireless_connected_or_disconnected_operate(void);
+void mode_indicator_light_init(void);
+void usb_suspend_power_down(void);
+void First_Level_Sleep(void);
+void Second_Level_Sleep(void);
+void sleep_mode(void);
+void mcu_reset_init(void);
+void slow_switch_fast(void);
+void set_row_and_col_when_sleep(void);
+void key_debounce(void);

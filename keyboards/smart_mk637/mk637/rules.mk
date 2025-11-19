@@ -16,7 +16,9 @@ SRC +=   analog.c \
 		 adc.c \
 		 rgblight_custom.c\
 		 rtc.c\
-		 smart_ble.c
+		 smart_ble.c\
+		 smart.c\
+		 battery.c
 #		 //
 #		 disable_swd.c
   DEBOUNCE_TYPE = sym_defer_g   

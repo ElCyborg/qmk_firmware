@@ -14,26 +14,30 @@
 #pragma once
 #include "quantum.h"
 
+enum kb_mode_t {
+    KB_MODE_USB=0,
+    KB_MODE_BLE,
+    KB_MODE_24G,
+    KB_MODE_DEFAULT
+};
+
 void sc_ble_battary(uint8_t batt_level);
 void WIRELESS_START(uint32_t mode);
 void WIRELESS_STOP(void);
-void WIRELESS_STOPOWER(void);
 void WIRELESS_PAIR(uint32_t mode);
 void encode_boot(void);
 void Module_UpdataHandle(void);
 
-
-
-
 typedef struct  {
-  uint8_t   eeconfig_last_wireless_mode;
-  uint8_t   eeconfig_nkro_flag;
-  // uint8_t   eeconfig_encode_toggle;
-  uint8_t   eeconfig_lock_win_flag;
+    bool      eeconfig_higher_blink_flag;
+    bool      eeconfig_rgb_matrix_off_flag;
+    bool      eeconfig_rgblight_off_flag;
+    bool      eeconfig_win_lock_flag;
+    uint8_t   eeconfig_nkro_flag;
+    uint8_t   eeconfig_last_wireless_mode;
 }MyVariables;
 
 MyVariables  variable_data;
-
 
 
 
