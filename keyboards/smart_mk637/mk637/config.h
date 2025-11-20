@@ -44,7 +44,7 @@
 
 #define RGB_MATRIX_LED_COUNT 68
 #define DYNAMIC_KEYMAP_LAYER_COUNT 8
-#define Module_Updata 
+//#define Module_Updata 
 #define RGB_MATRIX_KEYPRESSES // reacts to keypresses
 //#define RGB_MATRIX_KEYRELEASES         // reacts to keyreleases (instead of keypresses)
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS // enable framebuffer effects

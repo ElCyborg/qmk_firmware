@@ -267,8 +267,6 @@ void keyboard_pre_init_kb(void) {
     gpio_set_pin_input(BT_MODE);
     gpio_set_pin_input(PRF_MODE);
     gpio_set_pin_input(PLUG_IN);
-    gpio_write_pin_low(EN_BACKLIT);
-    gpio_set_pin_output(EN_BACKLIT);
     //wtf is pin 8
     gpio_set_pin_output(B8);
     gpio_write_pin_low(B8);
@@ -617,9 +615,10 @@ void mcu_reset_indicator_light(void){
     }
 }
 
-/*休眠关灯*/
+/*symotion-prefix)休眠关灯*/
 void sleep_off_rgb(void){
-    if ((batt_charge_status == batt_no_charge && temp == 0) || enable_rgb_pin_flag == false ) {
+    if ((batt_charge_status == batt_no_charge && temp == 0) || enable_rgb_pin_flag ) {
+//        uprintf("batt charge: %d, batt charge: %d, temp: %d, enable rgb pin: %d\n", batt_charge_status, batt_no_charge, temp, enable_rgb_pin_flag);
         rgb_matrix_set_color_all(RGB_OFF);
     }
 }
@@ -645,10 +644,10 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
      }else {
          rgb_matrix_off_state &= ~(0x01 << 6);
      }
-     
+
      /*休眠关灯*/
      sleep_off_rgb();
- 
+
      return false; 
 
 }
@@ -742,11 +741,14 @@ void rgblight_indicators_advanced_kb(void) {
         }
 
         if((rgb_matrix_off_flag && rgblight_off_flag && rgb_matrix_off_state == 0) || (rgb_matrix_get_val() == 0 && rgblight_get_val() == 0 && rgb_matrix_off_state == 0)){
+            uprintf("if statement\n");
             if (enable_rgb_pin_flag) {
+                uprintf("inside if\n");
                 gpio_write_pin_low(EN_BACKLIT);
                 enable_rgb_pin_flag = !enable_rgb_pin_flag;
             }
         }else {
+            uprintf("else statement\n");
             if(!enable_rgb_pin_flag){
                 if(!wakeup_first_sleep_flag){
                     gpio_write_pin_high(EN_BACKLIT);
@@ -800,36 +802,36 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
                 return false;
             }
         }
-        /*切mac层*/
-        if(keycode == KC_MAC){
-            if(record->event.pressed){
-                if(eeconfig_read_default_layer() == 1){
-                    set_single_persistent_default_layer(4);
-                }else if (eeconfig_read_default_layer() == 2) {
-                    set_single_persistent_default_layer(5);
-                }
-                if(win_lock_flag == true){
-                    win_lock_flag        = false;
-                    memory_win_lock_flag = true;
-                }
-            }
-            return false;
-        }
-        /*切win层*/
-        if(keycode == KC_WIN){
-            if(record->event.pressed){
-                if(eeconfig_read_default_layer() == 16){
-                    set_single_persistent_default_layer(0);
-                }else if (eeconfig_read_default_layer() == 32) {
-                    set_single_persistent_default_layer(1);
-                }
-                if(memory_win_lock_flag == true){
-                    win_lock_flag        = true;
-                    memory_win_lock_flag = false;
-                }
-            }
-            return false;
-        }
+//        /*切mac层*/
+//        if(keycode == KC_MAC){
+//            if(record->event.pressed){
+//                if(eeconfig_read_default_layer() == 1){
+//                    set_single_persistent_default_layer(4);
+//                }else if (eeconfig_read_default_layer() == 2) {
+//                    set_single_persistent_default_layer(5);
+//                }
+//                if(win_lock_flag == true){
+//                    win_lock_flag        = false;
+//                    memory_win_lock_flag = true;
+//                }
+//            }
+//            return false;
+//        }
+//        /*切win层*/
+//        if(keycode == KC_WIN){
+//            if(record->event.pressed){
+//                if(eeconfig_read_default_layer() == 16){
+//                    set_single_persistent_default_layer(0);
+//                }else if (eeconfig_read_default_layer() == 32) {
+//                    set_single_persistent_default_layer(1);
+//                }
+//                if(memory_win_lock_flag == true){
+//                    win_lock_flag        = true;
+//                    memory_win_lock_flag = false;
+//                }
+//            }
+//            return false;
+//        }
         /*复位*/
         if (keycode == KC_RESET) {
             if (record->event.pressed) {
@@ -851,7 +853,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
         }
         /*开关灯*/
         if((batt_charge_status != batt_no_charge || temp > 10)){
-            if (keycode == KC_SHUTRGB && record->event.pressed) {
+            if (keycode == RM_TOGG && record->event.pressed) {
                 if(rgb_matrix_off_flag == false || rgblight_off_flag == false){
                     rgb_matrix_off_flag = true; /*关闭矩阵灯标志位*/
                     rgblight_off_flag   = true;
@@ -911,7 +913,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
 //                unregister_code16(KC_RCMD);
 //        }
         /*锁win*/
-        if(keycode == KC_LOCK){
+        if(keycode == WIN_LOCK){
             if (record->event.pressed){
                 win_lock_flag = !win_lock_flag;
                 variable_data.eeconfig_win_lock_flag = win_lock_flag ;
@@ -959,256 +961,6 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
 
 
 
-
-bool encoder_update_kb(uint8_t index, bool clockwise) {
-
-//        // uprintf("problem2\r\n");
-//        // uprintf("problem2\r\n");
-//        // uprintf("problem2\r\n");
-//        // uprintf("problem2\r\n");
-//        // uprintf("problem2\r\n");
-//        // uprintf("problem2\r\n");
-//        //增加限制，锁键盘也不可以旋转切换
-//        if(!lock_keyboard)
-//        {
-//            // if (encode_toggle == 1) { /* First encoder */
-//            //     if (clockwise) {
-//            //         rgb_matrix_decrease_val();
-//            //     } else {
-//            //         rgb_matrix_increase_val();
-//            //     }
-//            // } else if (encode_toggle == 0) { /* Second encoder */
-//            //     if (clockwise) {
-//            //         tap_code(KC_VOLD);
-//            //     } else {
-//            //         tap_code(KC_VOLU);
-//            //     }
-//            // }
-//        }
-
-    return false;
-}
-
-
-
-
-// void three_mode(void)
-//{
-//    switch(kb_mode)
-//    {
-//        case KB_MODE_USB:
-////                        rgblight_set_layer_state(6,false);
-////                        rgblight_set_layer_state(3,false);
-////                        rgblight_set_layer_state(4,false);
-////                        rgblight_set_layer_state(5,false);
-////                        rgblight_set_layer_state(7,false);
-////                        rgblight_set_layer_state(8,false);
-//                    
-//        break;
-//
-//        case KB_MODE_BLE:
-//
-////                rgblight_set_layer_state(7,false);
-////                rgblight_set_layer_state(8,false);
-//                if(!wireless_connected)
-//                {             
-//                    if(timer_elapsed32(blink_ble_24g_timer) <= pair_timeout)
-//                    {
-//                        switch (last_wireless_mode) 
-//                        {
-//                            case 1:
-////                                 rgblight_set_layer_state(4,false);
-////                                 rgblight_set_layer_state(5,false);
-//                                if(ble24G_counter < ble24G_period)
-//                                {
-//                                    // if(BT_Switch_Flag)
-//                                    // rgb_matrix_set_color(52,0,255,0); //蓝牙回连绿色，配对蓝色
-//                                    // else
-//                                     rgb_matrix_set_color(52,0,0,255);
-//                               
-////                                    rgblight_set_layer_state(3,true);
-////                                    rgblight_set_layer_state(6,false);
-//                                }
-//                                else
-//                                {     
-////                                     rgblight_set_layer_state(6,true);
-////                                     rgblight_set_layer_state(3,false);
-//                                    rgb_matrix_set_color(52,0,0,0);
-//                                }
-//                            break;
-//
-//                            case 2: 
-////                                 rgblight_set_layer_state(3,false);
-////                                 rgblight_set_layer_state(5,false); 
-//                                if(ble24G_counter < ble24G_period)
-//                                {
-////                                    rgblight_set_layer_state(6,false);
-////                                    rgblight_set_layer_state(4,true);;
-//                                
-//                                }
-//                                else
-//                                {
-////                                     rgblight_set_layer_state(4,false);
-////                                     rgblight_set_layer_state(6,true);
-//                                  
-//                                }
-//                            break;
-//
-//                            case 3:
-////                                 rgblight_set_layer_state(4,false);
-////                                 rgblight_set_layer_state(3,false);  
-//                                if(ble24G_counter < ble24G_period)
-//                                {
-////                                    rgblight_set_layer_state(6,false);
-////                                    rgblight_set_layer_state(5,true);;
-//                                }
-//                                else
-//                                {
-////                                     rgblight_set_layer_state(5,false);
-////                                     rgblight_set_layer_state(6,true);
-//                                  
-//                                }     
-//                            break;
-//                            default:
-//                            break;
-//                        }
-//                    }
-//                    else{
-////                        rgblight_set_layer_state(6,false);
-////                        rgblight_set_layer_state(3,false);
-////                        rgblight_set_layer_state(4,false);
-////                        rgblight_set_layer_state(5,false);
-//                        POWER_EnterSleep();  
-//                         BT_24G_Shine = 0;  
-//                    }
-//                    pair_succeed_timer = timer_read32();
-//                    if (blink_num == 0) { 
-//                      BT_24G_Shine = 1;
-//                    }
-//                }
-//                else    
-//                {
-////                     rgblight_set_layer_state(6,false);
-//                    flag32.link_break_flag = 1;
-//                    if(timer_elapsed32(pair_succeed_timer) <= PAIR_SUCCEED_TIME)
-//                    {
-////                          rgblight_set_layer_state(6,false);
-//                        switch (last_wireless_mode) 
-//                        {
-//                            case 1:
-////                                     rgblight_set_layer_state(3,true);
-//                                     
-//                            break;
-//
-//                            case 2:   
-//
-////                                      rgblight_set_layer_state(4,true);
-//                            break;
-//
-//                            case 3:   
-//
-////                                      rgblight_set_layer_state(5,true);
-//                            break;
-//                            default:
-//                                break;
-//                        }
-//                        BT_24G_Shine = 1; //蓝牙没有连上
-//                    }
-//                    else
-//                    {
-//                         BT_24G_Shine = 0; 
-////                        rgblight_set_layer_state(3,false);
-////                        rgblight_set_layer_state(4,false);
-////                        rgblight_set_layer_state(5,false);
-////                        rgblight_set_layer_state(6,false);
-//                        flag32.mode_one = 0;                                          
-//                    }  
-//                }
-//        break;
-//
-//        case KB_MODE_24G:
-//
-////                    rgblight_set_layer_state(6,false);
-////                    rgblight_set_layer_state(3,false);
-////                    rgblight_set_layer_state(4,false);
-////                    rgblight_set_layer_state(5,false);
-//                if(!wireless_connected)
-//                {
-//                    if(timer_elapsed32(blink_ble_24g_timer) <= pair_timeout)
-//                    {
-//                        if(ble24G_counter < ble24G_period)
-//                        {
-////                                rgblight_set_layer_state(8,false);
-////                                rgblight_set_layer_state(7,true);
-//                        }
-//                        else 
-//                        {
-////                               rgblight_set_layer_state(7,false);
-////                               rgblight_set_layer_state(8,true);
-//                        } 
-//                    }
-//                    else{
-////                                rgblight_set_layer_state(7,false);
-////                                rgblight_set_layer_state(8,false);
-//                                POWER_EnterSleep();
-//                                BT_24G_Shine = 0;  
-//                    }
-//                    pair_succeed_timer = timer_read32();
-//                    if (blink_num == 0) { 
-//                      BT_24G_Shine = 1; 
-//                    }
-//                }
-//                else
-//                {
-//                    flag32.link_break_flag = 1;
-//                    if(timer_elapsed32(pair_succeed_timer) <= PAIR_SUCCEED_TIME)
-//                    {
-////                          rgblight_set_layer_state(8,false);
-////                          rgblight_set_layer_state(7,true);
-//                    }
-//                    else
-//                    {
-////                          rgblight_set_layer_state(7,false);
-////                          rgblight_set_layer_state(8,false);
-//                           BT_24G_Shine = 0;                                 
-//                    } 
-//                    
-//                   if(wakeup_pack24G)
-//                   {
-//                        wakeup_pack24G = 0;
-//                        tap_code(KC_F24);
-//                   }
-//                }
-//        break;
-//        default:
-//        break;
-//    }
-//
-//}
-
-
-
-
-
-//void gpio_disable_init(void)
-//{
-//    setPinOutput(ARGB_LEFT_EN);
-//    writePinLow(ARGB_LEFT_EN);
-//
-//      //  setPinInput(ARGB_LEFT_EN);
-//    palSetLineMode(OSC_IN,PAL_MODE_INPUT_ANALOG);  //0.23ma
-//    palSetLineMode(OSC_OUT,PAL_MODE_INPUT_ANALOG);
-//}
-////question
-//void gpio_init(void)
-//{
-//    //插入检测引脚
-//   setPinInput(PLUG_IN);
-//    //晶振引脚初始
-//   setPinInput(OSC_IN);
-//   setPinOutput(OSC_OUT);
-//}
-//
 
 void variable_init(void){
     blink_count          = 0;
@@ -1339,128 +1091,6 @@ void First_Level_Sleep(void) {
     loop10hz_token      = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
 }
 
-//uint8_t Sleep_First_PressFlag = 0;
-//void POWER_EnterSleep_First(void) {
-//    Sleep_First_PressFlag = 1;
-//    sleep_switch_driverflag = 200;
-//    cancel_deferred_exec(loop10hz_token);
-//    usb_disconnect();    //Don't enter SLEEP when USB mode
-//    gpio_disable_init();
-//    palSetLineMode(RENUM,PAL_MODE_INPUT_ANALOG);
-//    if(get_plug_mode() == false)
-//    {
-//        palSetLineMode(A11,PAL_MODE_INPUT_ANALOG);
-//        palSetLineMode(A12,PAL_MODE_INPUT_ANALOG);
-//    }
-//    setPinInput(BLE);
-//    setPinInput(TwoMode);
-//    palEnableLineEvent(BLE, PAL_EVENT_MODE_BOTH_EDGES);
-//    palEnableLineEvent(TwoMode, PAL_EVENT_MODE_BOTH_EDGES);
-//
-//
-//    setPinInput(encoder_left);
-//    setPinInput(encoder_right);
-//    palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
-//    palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
-//#if (DIODE_DIRECTION == ROW2COL)
-//
-//    pin_t col_pins[] = MATRIX_COL_PINS;
-//
-//    for(uint8_t x=0; x<MATRIX_COLS; x++)
-//    {
-//        pin_t pin;
-//        pin = col_pins[x];
-//        if (pin != NO_PIN) 
-//        {
-//            setPinOutput(pin);
-//            writePinLow(pin);
-//        }
-//    }
-//
-//    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-//   for(uint8_t x=0; x<MATRIX_ROWS; x++)
-//    { 
-//       pin_t pin;
-//       pin = row_pins[x];
-//        if (pin != NO_PIN) 
-//        {
-//            setPinInputHigh(pin);
-//            palEnableLineEvent(pin, PAL_EVENT_MODE_FALLING_EDGE);
-//        }
-//    }
-//   setPinInput(PLUG_IN);
-//   palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
-//#else
-//
-//    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-//    for(uint8_t x=0; x<MATRIX_ROWS; x++)
-//    { 
-//        pin_t pin;
-//        pin = row_pins[x];
-//        if (pin != NO_PIN) 
-//        {
-//            setPinOutput(pin);
-//            writePinLow(pin);
-//        }
-//    }
-//
-//    const long unsigned int col_pins[] = MATRIX_COL_PINS;
-//    for(uint8_t x=0; x<MATRIX_COLS; x++)
-//    //for(uint8_t x=0; x<9; x++)
-//    {
-//        pin_t pin;
-//        pin = col_pins[x];
-//        setPinInputHigh(pin);
-//        palEnableLineEvent(pin, PAL_EVENT_MODE_BOTH_EDGES);
-//    }
-//#endif
-//
-// 
-//    ADC1->CR2 &= ~ADC_CR2_ADON;   //0.9ma   
-//    //writePinLow(DRIVER_1_EN); 
-//    /* going to anabiosis*/
-//    //chSysLock();
-//    PWR->CR |= (1<<0)|(1<< 10) |(1<< 11)|(3<<18);
-//    /* Clear Wake-up flag */
-//    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
-//
-//    /* Set SLEEPDEEP bit of Cortex System Control Register */
-//    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-//    //}
-//    /* Request Wait For Interrupt */
-//    __WFI();
-//     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-////休眠防抖
-////休眠防抖
-//    key_debounce();
-//    /* Reset SLEEPDEEP bit of Cortex System Control Register */
-//    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-//    setPinInput(BLE);
-//    setPinInput(TwoMode);
-//    setPinOutput(RENUM);
-//    writePinHigh(RENUM);
-//    gpio_init();
-//    matrix_init();
-//    matrix_scan();
-//    stm32_clock_init();
-//    ws2812_init();
-//    adc_init(); 
-//    get_mode();
-//    rgb_wireless_timer = timer_read32();
-//     first_sleep_timer = timer_read32();
-//     packet_send = 0;
-//    //配对超时和回连超时计时清0
-//
-//    blink_ble_24g_timer = 0; //蓝牙回连超时     配对也是这个  
-//    pair_succeed_timer = timer_read32();//重新计时连接时间  
-//    blink_ble_24g_timer = timer_read32(); //重新计时回连时间
-//    flag32.mode_one = 1;
-//    blink_counter  = 0;
-//    ble24G_counter = 0;
-//    power_counter = 0;   
-//    loop10hz_token = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
-//  }
-
 
 /*二级休眠*/
 void Second_Level_Sleep(void) {
@@ -1521,150 +1151,6 @@ void Second_Level_Sleep(void) {
     variable_init();
     loop10hz_token   = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
 }
-
-
-//void POWER_EnterSleep(void) {
-//    sleep_switch_driverflag = 200;
-//    cancel_deferred_exec(loop10hz_token);
-//    WIRELESS_STOP();
-//    wait_ms(10);
-//    usb_disconnect();    //Don't enter SLEEP when USB mode
-//    gpio_disable_init(); 
-//    palSetLineMode(RENUM,PAL_MODE_INPUT_ANALOG);
-//    if(kb_mode == KB_MODE_24G)
-//    wakeup_pack24G = 1;
-//    
-//    if(get_plug_mode() == false)
-//    {
-//        palSetLineMode(A11,PAL_MODE_INPUT_ANALOG);
-//        palSetLineMode(A12,PAL_MODE_INPUT_ANALOG);
-//    }
-////开关设置
-//
-//    setPinInput(BLE);
-//    setPinInput(TwoMode);
-//    palEnableLineEvent(BLE, PAL_EVENT_MODE_BOTH_EDGES);
-//    palEnableLineEvent(TwoMode, PAL_EVENT_MODE_BOTH_EDGES);
-//    //旋钮唤醒
-//    setPinInput(encoder_left);
-//    setPinInput(encoder_right);
-//    palEnableLineEvent(encoder_left, PAL_EVENT_MODE_RISING_EDGE);
-//    palEnableLineEvent(encoder_right, PAL_EVENT_MODE_RISING_EDGE);
-//#if (DIODE_DIRECTION == ROW2COL)
-//
-//    pin_t col_pins[] = MATRIX_COL_PINS;
-//
-//    for(uint8_t x=0; x<MATRIX_COLS; x++)
-//    {
-//        pin_t pin;
-//        pin = col_pins[x];
-//        if (pin != NO_PIN) 
-//        {
-//            setPinOutput(pin);
-//            writePinLow(pin);
-//        }
-//    }
-//
-//    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-//    for(uint8_t x=0; x<MATRIX_ROWS; x++)
-//    { 
-//        pin_t pin;
-//        pin = row_pins[x];
-//        if (pin != NO_PIN) 
-//        {
-//            setPinInputHigh(pin);
-//            palEnableLineEvent(pin, PAL_EVENT_MODE_FALLING_EDGE);
-//        }
-//    }
-//   palEnableLineEvent(PLUG_IN, PAL_EVENT_MODE_BOTH_EDGES);
-//#else
-//    const long unsigned int row_pins[] = MATRIX_ROW_PINS;
-//    for(uint8_t x=0; x<MATRIX_ROWS; x++)
-//    { 
-//        pin_t pin;
-//        pin = row_pins[x];
-//        if (pin != NO_PIN) 
-//        {
-//            setPinOutput(pin);
-//            writePinLow(pin);
-//        }
-//    }
-//
-//    const long unsigned int col_pins[] = MATRIX_COL_PINS;
-//    for(uint8_t x=0; x<MATRIX_COLS; x++)
-//    //for(uint8_t x=0; x<9; x++)
-//    {
-//        pin_t pin;
-//        pin = col_pins[x];
-//        setPinInputHigh(pin);
-//        palEnableLineEvent(pin, PAL_EVENT_MODE_BOTH_EDGES);
-//    }
-//#endif
-//
-// 
-//    ADC1->CR2 &= ~ADC_CR2_ADON;   //0.9ma
-//    
-//    //writePinLow(DRIVER_1_EN); 
-//    /* going to anabiosis*/
-//    //chSysLock();
-//    PWR->CR |= (1<<0)|(1<< 10) |(1<< 11)|(3<<18);
-//    /* Clear Wake-up flag */
-//    PWR->CR |= PWR_CR_CWUF | PWR_CR_CSBF;
-//
-//    /* Set SLEEPDEEP bit of Cortex System Control Register */
-//    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-//    //}
-//    /* Request Wait For Interrupt */
-//    __WFI();
-//     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-//     //增加特殊按键消抖处理
-//
-////休眠防抖
-//
-//    key_debounce();
-//    /* Reset SLEEPDEEP bit of Cortex System Control Register */
-//    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-//
-//
-//    setPinInput(BLE);
-//    setPinInput(TwoMode);   
-//    setPinOutput(RENUM);
-//    writePinHigh(RENUM);
-//    gpio_init();
-//    stm32_clock_init();
-//    init_usb_driver(&USB_DRIVER); //Should not enter SLEEP when USB mode                //Should not enter SLEEP when USB mode
-//    matrix_init();
-//    ws2812_init();
-//    adc_init(); 
-//
-//
-//     get_mode();
-//    if(kb_mode == KB_MODE_BLE)
-//    {
-//        WIRELESS_START(last_wireless_mode);
-//    }
-//    if(kb_mode == KB_MODE_24G)
-//    {
-//        WIRELESS_START(4);
-//    }
-//    rgb_wireless_timer = timer_read32();
-//    first_sleep_timer = timer_read32();
-//    packet_send = 0;
-//    //配对超时和回连超时计时清0
-//    blink_ble_24g_timer = 0; //蓝牙回连超时     配对也是这个  
-//    pair_succeed_timer = timer_read32();
-//    //重新计时连接时间  
-//    blink_ble_24g_timer = timer_read32(); //重新计时回连时间
-//    flag32.mode_one = 1;
-//    blink_counter  = 0;
-//    ble24G_counter = 0;
-//    //低电
-//    ble24G_period = 5;
-//    pair_timeout = 20000;
-//  //  BT_Switch_Flag = 1;
-//    power_counter = 0;      
-//    loop10hz_token = defer_exec(LOOP_10HZ_PERIOD, loop_10Hz, NULL);
-// }
 
 
 

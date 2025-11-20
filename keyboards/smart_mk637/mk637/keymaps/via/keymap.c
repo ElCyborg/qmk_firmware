@@ -43,9 +43,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	// [1] = LAYOUT(
 	// 	QK_GESC,	 KC_BRID,   KC_BRIU, LGUI(KC_TAB), 	KC_MYCM, 	KC_MAIL,   KC_WHOM, 	KC_MPRV, 	KC_MPLY, KC_MNXT,   KC_MUTE, 	KC_VOLD, 	 KC_VOLU  ,	KC_BAT, _______,
 	// 	_______, KC_BLE1, KC_BLE2, 	KC_BLE3,KC_24G,  _______, _______, 	_______, _______, _______, 	_______, 	_______, 	_______, 	RM_HUEU,     KC_RESET,
-	// 	_______, 	KC_MACMODE, 	_______, 	_______, 	_______, 	_______,	_______, 	_______, 	_______, _______, 	_______, 	_______, 	RM_NEXT,   _______, 
+	// 	_______, 	KC_MAC, 	_______, 	_______, 	_______, 	_______,	_______, 	_______, 	_______, _______, 	_______, 	_______, 	RM_NEXT,   _______, 
 	// 	_______, 	_______, 	_______,  	KC_MODEPLUS,   KC_HUEPLS,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,  _______,
-	// 	_______, 	KC_WIN, 	_______,					KC_SHUTRGB,    	                      _______, 	_______,	RM_SPDD,	RM_VALD, RM_SPDU  , _______
+	// 	_______, 	KC_WIN, 	_______,					RM_TOGG,    	                      _______, 	_______,	RM_SPDD,	RM_VALD, RM_SPDU  , _______
 	// ),
 	// [2] = LAYOUT(
 	// 	QK_GESC,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  	KC_MINS,  	KC_EQL,  	KC_BSPC, ENC_TG,
@@ -57,9 +57,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	// [3] = LAYOUT(
 	// 	QK_GESC,	 KC_BRIU,   KC_BRID, 	KC_Mctl, 	KC_Lpad, 	 _______,   _______, 	KC_MPRV, 	KC_MPLY, KC_MNXT,  KC_MUTE, 	KC_VOLD, 	 KC_VOLU  ,	KC_BAT,  _______,
 	// 	_______,	KC_BLE1,	KC_BLE2, 	KC_BLE3, 	KC_24G, 	_______, 	_______, 	_______, 	_______, _______, 	_______, 	_______, 	_______, 	RM_HUEU,  KC_RESET,
-	// 	_______, 	_______, 	KC_WINMODE, 	_______, 	_______, 	_______,	_______, 	_______, 	_______, _______, 	_______, 	_______, 	RM_NEXT,   _______, 
+	// 	_______, 	_______, 	KC_WIN, 	_______, 	_______, 	_______,	_______, 	_______, 	_______, _______, 	_______, 	_______, 	RM_NEXT,   _______, 
 	//     _______, 	_______, 	_______,  	KC_MODEPLUS,   KC_HUEPLS,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,   _______,
-	// 	_______, 	_______, 	_______,					KC_SHUTRGB,    	                      _______, 	_______,	RM_SPDD,	RM_VALD, RM_SPDU  , _______
+	// 	_______, 	_______, 	_______,					RM_TOGG,    	                      _______, 	_______,	RM_SPDD,	RM_VALD, RM_SPDU  , _______
 	// )
 
 
@@ -72,10 +72,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	KC_LCTL, KC_LGUI,          KC_LALT,   KC_SPC,                  MO(1),   KC_RCTL,          KC_LEFT, 	KC_DOWN,	KC_RIGHT  , _______ 
 	),
 	[1] = LAYOUT(
-		KC_GRV,	 KC_BRID,   KC_BRIU, LGUI(KC_TAB), 	KC_MYCM, 	KC_MAIL,   KC_WHOM, 	KC_MPRV, 	KC_MPLY, KC_MNXT,   KC_MUTE, 	KC_VOLD, 	 KC_VOLU  ,	KC_SHUTRGB, KC_MUTE,
-		_______, KC_BLE1, KC_BLE2, 	KC_BLE3,KC_24G,  _______, _______, 	_______,  KC_UP,_______, 	_______, 	_______, 	_______, 	RM_NEXT,     KC_LOCK,
-		_______, 	KC_MACMODE, 	_______, 	_______, 	_______, 	_______,	_______, 		KC_LEFT, KC_DOWN, KC_RIGHT,_______, 	_______, 	RM_HUEU,   KC_VAL_UP, 
-		_______, 	_______, 	_______,  	_______,   _______,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,  KC_VAL_DN,
+		KC_GRV,	 KC_BRID,   KC_BRIU, LGUI(KC_TAB), 	KC_MYCM, 	KC_MAIL,   KC_WHOM, 	KC_MPRV, 	KC_MPLY, KC_MNXT,   KC_MUTE, 	KC_VOLD, 	 KC_VOLU  ,	RM_TOGG, KC_MUTE,
+		_______, KC_BLE1, KC_BLE2, 	KC_BLE3,KC_24G,  KC_WHITE, _______, 	_______,  KC_UP,_______, 	_______, 	_______, 	_______, 	RM_NEXT,     WIN_LOCK,
+		_______, 	KC_MAC, 	_______, 	_______, 	_______, 	_______,	_______, 		KC_LEFT, KC_DOWN, KC_RIGHT,_______, 	_______, 	RM_HUEU,   KC_VAI, 
+		_______, 	_______, 	_______,  	_______,   _______,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,  KC_VAD,
 		_______, 	KC_WIN, 	_______,					KC_RESET,    	                      _______, 	KC_BAT,	RM_SPDD,	RM_VALD, RM_SPDU  , _______
 	),
 	[2] = LAYOUT(
@@ -86,10 +86,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 		KC_LCTL, KC_LALT,          KC_LGUI,   KC_SPC,                  MO(3),   KC_RCTL,          KC_LEFT, 	KC_DOWN,	KC_RIGHT    , _______
 	),
 	[3] = LAYOUT(
-		KC_GRV,	 KC_BRID,   KC_BRIU, 	 LCTL(KC_UP),   KC_Lpad, 	 _______,   _______, 	KC_MPRV, 	KC_MPLY, KC_MNXT,  KC_MUTE, 	KC_VOLD, 	 KC_VOLU  ,	KC_SHUTRGB,  KC_MUTE,
-		_______,	KC_BLE1,	KC_BLE2, 	KC_BLE3, 	KC_24G, 	_______, 	_______, 	_______, 	 KC_UP,_______, 	_______, 	_______, 	_______, 	RM_NEXT,  KC_LOCK,
-		_______, 	_______, 	KC_WINMODE, 	_______, 	_______, 	_______,	_______, 	 	KC_LEFT, KC_DOWN, KC_RIGHT, 	_______,_______, 	RM_HUEU,   KC_VAL_UP, 
-	    _______, 	_______, 	_______,  	_______,   _______,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,   KC_VAL_DN,
+		KC_GRV,	 KC_BRID,   KC_BRIU, 	 LCTL(KC_UP),   KC_Lpad, 	 _______,   _______, 	KC_MPRV, 	KC_MPLY, KC_MNXT,  KC_MUTE, 	KC_VOLD, 	 KC_VOLU  ,	RM_TOGG,  KC_MUTE,
+		_______,	KC_BLE1,	KC_BLE2, 	KC_BLE3, 	KC_24G, 	_______, 	_______, 	_______, 	 KC_UP,_______, 	_______, 	_______, 	_______, 	RM_NEXT,  WIN_LOCK,
+		_______, 	_______, 	KC_WIN, 	_______, 	_______, 	_______,	_______, 	 	KC_LEFT, KC_DOWN, KC_RIGHT, 	_______,_______, 	RM_HUEU,   KC_VAI, 
+	    _______, 	_______, 	_______,  	_______,   _______,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,   KC_VAD,
 		_______, 	_______, 	_______,					KC_RESET,    	                      _______, 	KC_BAT,	RM_SPDD,	RM_VALD, RM_SPDU  , _______
 	),
 
@@ -102,10 +102,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 		KC_LCTL, KC_LGUI,          KC_LALT,   KC_SPC,                  MO(5),   KC_RCTL,          KC_LEFT, 	KC_DOWN,	KC_RIGHT  , _______ 
 	),
 	[5] = LAYOUT(
-		KC_GRV,	  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,	_______, 	 _______  ,	KC_SHUTRGB, KC_MUTE,
-		_______, KC_BLE1, KC_BLE2, 	KC_BLE3, KC_24G,  _______, _______, 	_______,  KC_UP,_______, 	_______, 	_______, 	_______, 	RM_NEXT,     KC_LOCK,
-		_______, 	KC_MACMODE, 	_______, 	_______, 	_______, 	_______,	_______, 		KC_LEFT, KC_DOWN, KC_RIGHT, _______, 	_______, 	RM_HUEU,   KC_VAL_UP, 
-		_______, 	_______, 	_______,  	_______,   _______,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,  KC_VAL_DN,
+		KC_GRV,	  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,	_______, 	 _______  ,	RM_TOGG, KC_MUTE,
+		_______, KC_BLE1, KC_BLE2, 	KC_BLE3, KC_24G,  _______, _______, 	_______,  KC_UP,_______, 	_______, 	_______, 	_______, 	RM_NEXT,     WIN_LOCK,
+		_______, 	KC_MAC, 	_______, 	_______, 	_______, 	_______,	_______, 		KC_LEFT, KC_DOWN, KC_RIGHT, _______, 	_______, 	RM_HUEU,   KC_VAI, 
+		_______, 	_______, 	_______,  	_______,   _______,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,  KC_VAD,
 		_______, 	KC_WIN, 	_______,					KC_RESET,    	                      _______, 	KC_BAT,	RM_SPDD,	RM_VALD, RM_SPDU  , _______
 	),
 	[6] = LAYOUT(
@@ -116,10 +116,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 		KC_LCTL, KC_LALT,          KC_LGUI,   KC_SPC,                  MO(7),   KC_RCTL,          KC_LEFT, 	KC_DOWN,	KC_RIGHT    , _______
 	),
 	[7] = LAYOUT(
-		KC_GRV,	    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,	_______, 	 _______  ,	KC_SHUTRGB,  KC_MUTE,
-		_______,	KC_BLE1,	KC_BLE2, 	KC_BLE3, 	KC_24G, 	_______, 	_______, 	_______, 	 KC_UP,_______, 	_______, 	_______, 	_______, 	RM_NEXT,  KC_LOCK,
-		_______, 	_______, 	KC_WINMODE, 	_______, 	_______, 	_______,	_______, 	 	KC_LEFT, KC_DOWN, KC_RIGHT,_______,  	_______, 	RM_HUEU,   KC_VAL_UP, 
-	    _______, 	_______, 	_______,  	_______,   _______,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,   KC_VAL_DN,
+		KC_GRV,	    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,	_______, 	 _______  ,	RM_TOGG,  KC_MUTE,
+		_______,	KC_BLE1,	KC_BLE2, 	KC_BLE3, 	KC_24G, 	_______, 	_______, 	_______, 	 KC_UP,_______, 	_______, 	_______, 	_______, 	RM_NEXT,  WIN_LOCK,
+		_______, 	_______, 	KC_WIN, 	_______, 	_______, 	_______,	_______, 	 	KC_LEFT, KC_DOWN, KC_RIGHT,_______,  	_______, 	RM_HUEU,   KC_VAI, 
+	    _______, 	_______, 	_______,  	_______,   _______,	  _______, 	_______, 	_______, 	_______, 	_______, 	_______,    _______,   RM_VALU,   KC_VAD,
 		_______, 	_______, 	_______,					KC_RESET,    	                      _______, 	KC_BAT,	RM_SPDD,	RM_VALD, RM_SPDU  , _______
 	)
 };

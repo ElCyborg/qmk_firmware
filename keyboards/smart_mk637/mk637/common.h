@@ -62,33 +62,25 @@ extern uint8_t  isr_specal_Trig;
 enum custom_keycodes {
 #ifdef VIA_ENABLE
 //    KC_USB = QK_USER,
-    KC_USB = QK_KB_0,
+    KC_24G = QK_KB_0,
 #else
-    KC_USB = SAFE_RANGE,
+    KC_24G = SAFE_RANGE,
 #endif
-  KC_BLE1,
-  KC_BLE2,
-  KC_BLE3,
-  KC_24G,
-  KC_BAT,
-  KC_RESET,
-  KC_WIN,
-  KC_MAC,
-  KC_WINMODE,
-  KC_MACMODE,
-  KC_SHUTRGB,
-  KC_RRWIN,
-  KC_MODE,
-  KC_Mctl,
-  KC_Lpad,
-  KC_HUEPLS,
-  ENC_TG,
-  KC_VAL_UP,
-  KC_VAL_DN,
-  KC_SPD_UP,
-  KC_SPD_DN,
-  KC_LOCK,
-  KC_WHITE  
-
-
+    KC_BLE1,
+    KC_BLE2,
+    KC_BLE3,
+    KC_Mctl,
+    KC_Lpad,
+    KC_Lopt,
+    KC_Lcmd,
+    KC_Rcmd,
+    KC_MAC,
+    KC_WIN,
+    WIN_LOCK,
+    KC_RESET,
+    KC_BAT,
+    KC_MODE,
+    KC_VAI,
+    KC_VAD,
+    KC_WHITE
 };
