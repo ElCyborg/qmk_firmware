@@ -90,3 +90,4 @@ void mcu_reset_init(void);
 void slow_switch_fast(void);
 void set_row_and_col_when_sleep(void);
 void key_debounce(void);
+void rgblight_indicators_advanced_kb(void); 

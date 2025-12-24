@@ -123,10 +123,12 @@ static host_driver_t *last_host_driver = NULL;
 void smart_ble_wakeup(void)
 {
    uint32_t mode_flag;
+   
   
 
    if(first_sleep_flag)
    {
+//       uprintf("smart ble wakeup: %d \n", first_sleep_flag);
        eeconfig_read_kb_datablock(&variable_data, 0, EECONFIG_KB_DATA_SIZE);
        mode_flag = variable_data.eeconfig_last_wireless_mode;
        first_sleep_flag = false;
@@ -238,6 +240,7 @@ void WIRELESS_PAIR(uint32_t mode)
 
 void WIRELESS_START(uint32_t mode)
 {
+//    uprintf("wireless start: %ld \n", mode);
    smart_ble_startup();
    wireless_connected=false;
    if(mode<1 || mode>4)
@@ -600,7 +603,8 @@ static void ap2_ble_keyboard(report_keyboard_t *report) {
    keyboard_no_idle_flag = true;
 
     
-   //   uprintf("keyboard_delay_send_code_time:%ld\r\n",timer_elapsed32(keyboard_delay_send_code_time));
+//      uprintf("keyboard_delay_send_code_time:%ld\r\n",timer_elapsed32(keyboard_delay_send_code_time));
+//      uprintf("wireless connected: %d", wireless_connected);
 
    if(wireless_connected)
    {
@@ -623,6 +627,7 @@ static void ap2_ble_keyboard(report_keyboard_t *report) {
        }
 
        //防止宏录制异常，更新心跳包计数以及一二级时间
+       // Prevent macro recording anomalies, update heartbeat packet count and primary/secondary timestamps
        wireless_no_operation_time  = timer_read32();
        first_sleep_time   = timer_read32(); 
        packet_send_time = 0;
@@ -640,6 +645,7 @@ static void ap2_ble_keyboard(report_keyboard_t *report) {
            }
        }
        else{
+//           uprintf("NOT TIMER ELAPSED %ld \n", keyboard_delay_send_code_time);
            if(kb_mode != KB_MODE_24G)
                wait_ms(8);
            else{

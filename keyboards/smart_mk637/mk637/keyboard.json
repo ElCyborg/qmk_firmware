@@ -26,7 +26,6 @@
         "extrakey": true,
         "mousekey": true,
         "nkro": true,
-        "rgblight": true,
         "rgb_matrix":true,
         "os_detection":true,
         "encoder": true
